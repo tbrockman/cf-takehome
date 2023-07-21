@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis_container
+    ports:
+      - 6379:6379
+
+  # nextjs:
+  #   depends_on:
+  #     - prometheus
+  #     - redis 
+  #   image: cloudflare/takehome
+  #   ports:
+  #     - 3000:3000
+  #   build:
+  #     context: ./
+  #     dockerfile: Dockerfile
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus:/etc/prometheus
