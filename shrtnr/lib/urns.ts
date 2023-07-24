@@ -1,28 +1,28 @@
 class Urn {
-    namespace: string;
-    type: string;
-    resource: string;
+    namespace: string
+    type: string
+    resource: string
 
     constructor(type: string, resource: string) {
-        this.namespace = 'urn:shrtnr';
-        this.type = type;
-        this.resource = resource;
+        this.namespace = 'urn:shrtnr'
+        this.type = type
+        this.resource = resource
     }
 
     toString() {
-        return this.namespace + ':' + this.type + ':' + this.resource;
+        return this.namespace + ':' + this.type + ':' + this.resource
     }
 
     getPrefix() {
-        return this.namespace + ':' + this.type;
+        return this.namespace + ':' + this.type
     }
 
     getType() {
-        return this.type;
+        return this.type
     }
 
     getResource() {
-        return this.resource;
+        return this.resource
     }
 }
 
@@ -32,7 +32,7 @@ class Urn {
  */
 class ShortUrlUrn extends Urn {
     constructor(resource: string) {
-        super('short_url', resource);
+        super('short_url', resource)
     }
 }
 
@@ -42,7 +42,7 @@ class ShortUrlUrn extends Urn {
  */
 class LongUrlUrn extends Urn {
     constructor(resource: string) {
-        super('long_url', resource);
+        super('long_url', resource)
     }
 }
 
@@ -53,7 +53,7 @@ class LongUrlUrn extends Urn {
  */
 class CounterUrn extends Urn {
     constructor(resource: string) {
-        super('counter', resource);
+        super('counter', resource)
     }
 }
 
@@ -63,7 +63,7 @@ class CounterUrn extends Urn {
  */
 class TrackerUrn extends Urn {
     constructor(resource: string) {
-        super('tracker', resource);
+        super('tracker', resource)
     }
 }
 

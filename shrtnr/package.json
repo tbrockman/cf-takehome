@@ -9,10 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mui/joy": "^5.0.0-alpha.88",
     "@types/node": "20.4.2",
     "@types/react": "18.2.15",
     "@types/react-dom": "18.2.7",
-    "antd": "^5.7.2",
+    "@visx/shape": "^3.3.0",
     "autoprefixer": "10.4.14",
     "eslint": "8.45.0",
     "eslint-config-next": "13.4.11",

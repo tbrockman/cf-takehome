@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server'
 import { Redis } from 'ioredis'
 import { Analytics } from '@/lib/analytics'
 import { ShortUrlUrn } from '@/lib/urns'
-import { LinkShortener } from '@/lib/link-shortener'
+import { Shortener } from '@/lib/shortener'
 import { ShortUrlNotFoundError } from '@/lib/errors'
 import { LinksHandler } from '@/lib/handlers/links'
 
 const redis = new Redis()
 const analytics = new Analytics(redis)
-const shortener = new LinkShortener(redis)
+const shortener = new Shortener(redis)
 const handler = new LinksHandler(analytics, shortener)
 
 /**
@@ -102,7 +102,7 @@ const handler = new LinksHandler(analytics, shortener)
  *                   type: string
  *                   description: Error message
  */
-export async function GET(request: Request, { params }: { params: { short: string }}) {
+export async function GET(request: Request, { params }: { params: { short: string } }) {
     const { short } = params
     const shortUrlUrn = new ShortUrlUrn(short)
     const url = new URL(request.url)
@@ -120,7 +120,7 @@ export async function GET(request: Request, { params }: { params: { short: strin
     return NextResponse.json(result.val, { status: 200 })
 }
 
-export async function DELETE(_: Request, { params }: { params: { short: string }}) {
+export async function DELETE(_: Request, { params }: { params: { short: string } }) {
     const { short } = params
     const shortUrlUrn = new ShortUrlUrn(short)
     let result = await handler.delete(shortUrlUrn)

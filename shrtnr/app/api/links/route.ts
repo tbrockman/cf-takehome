@@ -1,13 +1,13 @@
-import { Analytics } from '@/lib/analytics';
+import { Analytics } from '@/lib/analytics'
 import { Redis } from 'ioredis'
 import { NextResponse } from 'next/server'
-import { LinkShortener } from '@/lib/link-shortener'
+import { Shortener } from '@/lib/shortener'
 import { ShortLinkAlreadyExists } from '@/lib/errors'
-import { LinksHandler } from '@/lib/handlers/links';
+import { LinksHandler } from '@/lib/handlers/links'
 
 const redis = new Redis()
 const analytics = new Analytics(redis)
-const shortener = new LinkShortener(redis)
+const shortener = new Shortener(redis)
 const handler = new LinksHandler(analytics, shortener)
 
 /**
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ url: newUrl.toString() }, { status: 201, headers: { Location: newUrl.toString() } })
     }
     else {
-        
+
         if (result.val instanceof ShortLinkAlreadyExists) {
             newUrl.pathname = result.val.link
             return new Response(null, { status: 304, headers: { Location: newUrl.toString() } })

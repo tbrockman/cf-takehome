@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import { LinkShortener } from '@/lib/link-shortener';
+import { Shortener } from '@/lib/shortener';
 import { ShortUrlNotFoundError } from '@/lib/errors';
 import { Redis } from 'ioredis';
 import { Analytics } from '@/lib/analytics';
@@ -7,7 +7,7 @@ import { ShortUrlUrn } from '@/lib/urns';
 
 const redis = new Redis();
 const analytics = new Analytics(redis);
-const shortener = new LinkShortener(redis);
+const shortener = new Shortener(redis);
 
 export default async function Page({ params }: any) {
   const { short } = params
