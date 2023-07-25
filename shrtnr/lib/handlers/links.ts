@@ -38,7 +38,7 @@ class LinksHandler {
         if (queryResult.err) {
             return queryResult
         }
-        const longUrlResult = await this.shortener.getLongUrl(shortUrlUrn)
+        const longUrlResult = await this.shortener.getLongUrlFromShort(shortUrlUrn)
 
         if (longUrlResult.err) {
             return longUrlResult

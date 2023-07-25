@@ -69,5 +69,13 @@ Project Requirements:
   * Redis is completely open and accessible to anyone, we would want to restrict access to certain privileged accounts (and store those credentials in a secret management tool of some sort)
   * No authentication for the shortener service itself. Anyone can create and delete whatever links they want. Since this is an internal service, we would likely want to implement something OpenID/SAML compatible to facilitate single-sign on.
 * Transactions/Pipelining:
-  * Right now certain operations (deleting a short link, creating a short link) can execute and partially fail. 
+  * Right now certain operations (deleting a short link, creating a short link) can execute and partially fail because they manipulate data using multiple transactions. 
   * While unlikely, these operations should be executed atomically (all or nothing). 
+* Deployment:
+  * Because we leverage Redis, our API routes are *not* compatible with Edge runtimes (despite Cloudflare Workers now support TCP connections -- `ioredis` still assumes a Node.js environment) -- meaning deploying our application would require running a Node.js server somewhere.
+  * The current docker compose file (provided for simplicity of execution) likely isn't what we would want to deploy to production. We would probably want to create a Kubernetes manifests with necessary service and deployment specs (containing some concrete resource budgets) and horizontal pod autoscaling.
+* Configuration:
+  * The Redis backend (RedisStack) currently enables all additional modules (even though we only use RedisSearch)
+  * The application is built for local development, and doesn't produce an optimized production build. In the case of next.js, this means re-compiling on requests to pages.
+* Error-handling:
+  * Client doesn't render anything
