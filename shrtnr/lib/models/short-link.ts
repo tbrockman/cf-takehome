@@ -1,14 +1,21 @@
-import { URLWithoutProtocol } from "@/lib/urls"
 import { LongUrlUrn, ShortUrlUrn } from "@/lib/urns"
 
+type LinkStats = {
+    today: number
+    week: number
+    all: number
+}
+
 export type ShortLink = {
-    short: URLWithoutProtocol
-    long: URLWithoutProtocol
-    views: {
-        today: number
-        week: number
-        all: number
-    }
+    short: URL
+    long: URL
+    views: LinkStats
+}
+
+export type ShortLinkData = {
+    short: string
+    long: string
+    views: LinkStats
 }
 
 export type PartialShortLink = Omit<Omit<ShortLink, 'short'>, 'long'> & {

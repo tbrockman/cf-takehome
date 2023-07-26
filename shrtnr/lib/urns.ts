@@ -58,12 +58,12 @@ class CounterUrn extends Urn {
 }
 
 /**
- * A Tracker URN is the URN for a tracker. In Redis, it is a key identifying a time series.
- * This allows us to track the number of times a short link is accessed.
+ * A Timeseries URN is the URN for a timeseries. In Redis, it is a key identifying a time series.
+ * We use this to track the number of times a short link is accessed.
  */
-class TrackerUrn extends Urn {
+class TimeseriesUrn extends Urn {
     constructor(resource: string) {
-        super('tracker', resource)
+        super('timeseries', resource)
     }
 }
 
@@ -78,6 +78,6 @@ export {
     ShortUrlUrn,
     LongUrlUrn,
     CounterUrn,
-    TrackerUrn,
+    TimeseriesUrn,
     SearchUrn
 }

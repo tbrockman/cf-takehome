@@ -38,7 +38,7 @@ export default function ShortLinkManager({ link, setLink }: ShortLinkManagerProp
     }
 
     const shareLink = () => {
-        navigator.share({ url: link.short.toString() })
+        navigator.share({ url: URL.prototype.toString.apply(link.short) })
     }
 
     const deleteLink = () => {
@@ -95,14 +95,13 @@ export default function ShortLinkManager({ link, setLink }: ShortLinkManagerProp
                     </thead>
                     <tbody>
                         <tr>
-                            <td><Link href={link.short.toString()}>{link.short.toString()}</Link></td>
+                            <td><Link href={URL.prototype.toString.apply(link.short)}>{link.short.toString()}</Link></td>
                             <td>{link.views.today} views</td>
                             <td>{link.views.week} views</td>
                             <td>{link.views.all} views</td>
                         </tr>
                     </tbody>
                 </Table>
-                {/* TODO: On-click delete with confirmation */}
                 <Grid container flexDirection={'row'} spacing={1} padding={'0 0.5rem'} paddingTop='1rem'>
                     <Grid>
                         <Button color='primary' variant='solid' startDecorator={<IosShareIcon />} onClick={shareLink}>

@@ -7,8 +7,8 @@ import {
     ShortUrlNotFoundError, SearchQueryTooShort
 } from '@/lib/errors'
 import { CounterUrn, LongUrlUrn, SearchUrn, ShortUrlUrn } from '@/lib/urns'
-import { toBase58, wrapResultAsync } from '@/lib/util'
-import { CreatedLinkURNs } from "@/lib/models/short-link"
+import { toBase58, tryResultAsync } from '@/lib/util'
+import { ShortLink, ShortLinkData } from "@/lib/models/short-link"
 import { basicURLParse, serializeURL } from 'whatwg-url'
 
 const SHORT_LINK_NAME = 'short_urls'
@@ -26,7 +26,7 @@ class Shortener {
         this.redis = redis
     }
 
-    async createShortLink(url: string, ttl?: number): Promise<Result<CreatedLinkURNs, Error | ShortLinkAlreadyExists | ShortLinkValidationError>> {
+    async createShortLink(url: string, ttl?: number): Promise<Result<ShortLinkData, Error | ShortLinkAlreadyExists | ShortLinkValidationError>> {
         const parseResult = this._parseLink(url)
         const longUrlUrn = new LongUrlUrn(parseResult.val.toString())
 
@@ -37,7 +37,16 @@ class Shortener {
         const shortLinkResult = await this.getShortLink(longUrlUrn)
 
         if (shortLinkResult.ok) {
-            return Err(new ShortLinkAlreadyExists(longUrlUrn, shortLinkResult.val))
+            const link = {
+                short: shortLinkResult.val.getResource(),
+                long: longUrlUrn.getResource(),
+                views: {
+                    today: 0,
+                    week: 0,
+                    all: 0
+                }
+            }
+            return Err(new ShortLinkAlreadyExists(longUrlUrn, link))
         }
         const shortUrlUrn = await this._generateShortLink(longUrlUrn, ttl)
 
@@ -106,7 +115,7 @@ class Shortener {
     }
 
     async getShortLink(longUrlUrn: LongUrlUrn): Promise<Result<ShortUrlUrn, Error | LongUrlNotFoundError>> {
-        return wrapResultAsync(async () => {
+        return tryResultAsync(async () => {
             return await this._getShortLink(longUrlUrn)
         })
     }
@@ -121,35 +130,31 @@ class Shortener {
     }
 
     async getLongUrlFromShort(shortUrlUrn: ShortUrlUrn): Promise<Result<LongUrlUrn, Error | ShortUrlNotFoundError>> {
-        return wrapResultAsync(async () => {
-            return await this._getLongUrl(shortUrlUrn)
-        })
-    }
+        const result: Result<(string | null)[], Error> = await tryResultAsync(() => { return this.redis.hmget(shortUrlUrn.toString(), 'protocol', 'long') })
 
-    private async _getLongUrl(shortUrlUrn: ShortUrlUrn) {
-        const long = await this.redis.hget(shortUrlUrn.toString(), 'long')
-
-        if (!long) {
-            throw new ShortUrlNotFoundError(shortUrlUrn)
+        if (result.err) {
+            return result
         }
-        return new LongUrlUrn(long)
+
+        const [protocol, url] = result.val
+
+        if (!protocol || !url) {
+            return Err(new ShortUrlNotFoundError(shortUrlUrn))
+        }
+        return Ok(new LongUrlUrn(protocol + '//' + url))
     }
 
     async delete(shortUrlUrn: ShortUrlUrn): Promise<Result<void, Error | ShortUrlNotFoundError>> {
-        return wrapResultAsync(async () => {
-            return await this._delete(shortUrlUrn)
-        })
-    }
+        const result = await this.getLongUrlFromShort(shortUrlUrn)
 
-    private async _delete(shortUrlUrn: ShortUrlUrn): Promise<void> {
-        const url = await this.redis.hget(shortUrlUrn.toString(), 'long')
-
-        if (!url) {
-            throw new ShortUrlNotFoundError(shortUrlUrn)
+        if (result.err) {
+            return result
         }
-        const urlUrn = new LongUrlUrn(url)
-        await this.redis.del(shortUrlUrn.toString())
-        await this.redis.del(urlUrn.toString())
+
+        return await tryResultAsync(async () => {
+            await this.redis.del(shortUrlUrn.toString())
+            await this.redis.del(result.val.toString())
+        })
     }
 
     async search(query: string): Promise<Result<any, Error | SearchQueryTooShort>> {

@@ -12,15 +12,21 @@ function toBase58(id: number): string {
 	return result
 }
 
-async function wrapResultAsync<T>(
+function newURLWithPathname(base: string, short: string,): URL {
+	const clone = new URL(base)
+	clone.pathname = short
+	return clone
+}
+
+async function tryResultAsync<T, E = Error>(
 	func: () => Promise<T>
-): Promise<Result<T, Error>> {
+): Promise<Result<T, E>> {
 	try {
 		const result = await func()
 		return Ok(result)
 	} catch (error: any) {
-		return Err(error instanceof Error ? error : new Error(error))
+		return Err(error instanceof Error ? error : new Error(error)) as Result<T, E>
 	}
 }
 
-export { toBase58, wrapResultAsync }
+export { toBase58, tryResultAsync, newURLWithPathname }

@@ -1,5 +1,5 @@
-import { ShortUrlUrn } from '@/lib/urns'
-import { LongUrlUrn, ShortUrlUrn } from "./urns"
+import { LongUrlUrn, ShortUrlUrn, TimeseriesUrn } from '@/lib/urns'
+import { ShortLinkData } from '@lib/models/short-link'
 
 export class ShortLinkValidationError extends Error {
 }
@@ -18,14 +18,13 @@ export class ShortLinkNotValidURL extends ShortLinkValidationError {
         super(`Link "${link}" is not a valid URL.`)
     }
 }
-export class ShortLinkAlreadyExists extends Error {
-    short: ShortUrlUrn
-    long: LongUrlUrn
+export class ShortLinkAlreadyExists extends Error implements ShortLinkData {
 
-    constructor(long: LongUrlUrn, short: ShortUrlUrn) {
+    constructor(long: LongUrlUrn, link: ShortLinkData) {
         super(`Short link for "${long}" already exists`)
-        this.short = short
-        this.long = long
+        this.short = link.short
+        this.long = link.long
+        this.views = link.views
     }
 }
 export class LongUrlNotFoundError extends Error {
@@ -41,5 +40,10 @@ export class ShortUrlNotFoundError extends Error {
 export class SearchQueryTooShort extends Error {
     constructor(length: number) {
         super(`Search terms require at least ${length} characters`)
+    }
+}
+export class TimeseriesNotFoundError extends Error {
+    constructor(urn: TimeseriesUrn) {
+        super(`Timeseries for "${urn}" not found`)
     }
 }

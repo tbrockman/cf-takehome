@@ -104,10 +104,7 @@ const handler = new LinksHandler(analytics, shortener)
 export async function GET(request: Request, { params }: { params: { short: string } }) {
     const { short } = params
     const shortUrlUrn = new ShortUrlUrn(short)
-    const url = new URL(request.url)
-    const start = Number.parseInt(url.searchParams.get('start') || '0')
-    const end = Number.parseInt(url.searchParams.get('end') || new Date().getTime().toString())
-    const result = await handler.get(shortUrlUrn, start, end)
+    const result = await handler.get(shortUrlUrn)
 
     if (result.err) {
 
