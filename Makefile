@@ -7,7 +7,7 @@ build-app:
 build-all:
 	docker compose -f ./shrtnr/docker-compose.yml -f ./signoz/deploy/docker/clickhouse-setup/docker-compose.yaml build --parallel
 test:
-	echo "No tests yet"
+	docker compose -f ./shrtnr/docker-compose.yml --profile testing up
 signoz-download:
 	git clone -b main https://github.com/SigNoz/signoz.git || cd signoz && git pull origin main
 

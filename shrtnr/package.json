@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest --watch",
-    "e2e": "start-server-and-test dev http://localhost:3000 \"cypress open --e2e\""
+    "redis": "docker compose up -d || true",
+    "cypress": "cypress open --e2e",
+    "cypress:headless": "cypress run --browser=chrome --headless",
+    "e2e:headless": "start-server-and-test dev http://0.0.0.0:3000 \"yarn cypress:headless\"",
+    "e2e": "yarn redis && start-server-and-test dev http://localhost:3000 \"yarn cypress\""
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",

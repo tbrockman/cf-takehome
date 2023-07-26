@@ -1,11 +1,10 @@
 import { Analytics } from '@/lib/analytics'
-import { Redis } from 'ioredis'
+import { redis } from '@/lib/redis'
 import { NextResponse } from 'next/server'
 import { Shortener } from '@/lib/shortener'
-import { ShortLinkAlreadyExists } from '@/lib/errors'
+import { ShortLinkAlreadyExists, ShortLinkValidationError } from '@/lib/errors'
 import { LinksHandler } from '@/lib/handlers/links'
 
-const redis = new Redis()
 const analytics = new Analytics(redis)
 const shortener = new Shortener(redis)
 const handler = new LinksHandler(analytics, shortener)
@@ -61,6 +60,16 @@ const handler = new LinksHandler(analytics, shortener)
  *             schema:
  *               type: string
  *             description: URL to the existing short link
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message
  *       500:
  *         description: Server error experienced during short link creation
  *         content:
@@ -78,14 +87,18 @@ export async function POST(request: Request) {
     const result = await handler.post(url, ttl)
 
     if (result.ok) {
-        newUrl.pathname = result.val.getResource()
-        return NextResponse.json({ url: newUrl.toString() }, { status: 201, headers: { Location: newUrl.toString() } })
+        newUrl.pathname = result.val.short?.toString() || ''
+        result.val.short = newUrl.toString()
+
+        return NextResponse.json(result.val, { status: 201, headers: { Location: newUrl.toString() } })
     }
     else {
-
         if (result.val instanceof ShortLinkAlreadyExists) {
-            newUrl.pathname = result.val.link
-            return new Response(null, { status: 304, headers: { Location: newUrl.toString() } })
+            newUrl.pathname = result.val.short?.toString()
+            return NextResponse.json({ short: result.val.short.getResource(), long: result.val.long.getResource(), views: {} }, { status: 200 })
+        }
+        else if (result.val instanceof ShortLinkValidationError) {
+            return NextResponse.json({ error: result.val.message }, { status: 400 })
         }
         else {
             return NextResponse.json({ error: result.val.message }, { status: 500 })

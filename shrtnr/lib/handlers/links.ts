@@ -1,8 +1,10 @@
+import { URLWithoutProtocol } from '@/lib/urls'
 import { Analytics, Timeseries } from "@/lib/analytics"
 import { Shortener } from "@/lib/shortener"
-import { ShortUrlNotFoundError } from '../errors'
+import { ShortLinkAlreadyExists, ShortUrlNotFoundError } from '../errors'
 import { Ok, Result } from "ts-results-es"
 import { LongUrlUrn, ShortUrlUrn } from "@/lib/urns"
+import { CreatedLinkURNs, PartialShortLink, ShortLink } from "@/lib/models/short-link"
 
 export type LinkInfo = { timeseries: Timeseries<number>, url: string }
 
@@ -16,18 +18,30 @@ class LinksHandler {
         this.shortener = shortener
     }
 
-    async post(url: string, ttl?: number): Promise<Result<ShortUrlUrn, Error>> {
+    async post(url: string, ttl?: number): Promise<Result<PartialShortLink, Error>> {
         const shortLinkResult = await this.shortener.createShortLink(url, ttl)
 
-        if (shortLinkResult.err) {
+        if (shortLinkResult.err && !(shortLinkResult.val instanceof ShortLinkAlreadyExists)) {
             return shortLinkResult
         }
-        const analyticsResult = await this.analytics.create(shortLinkResult.val, ttl)
 
-        if (analyticsResult.err) {
-            return analyticsResult
+        if (!shortLinkResult.err) {
+            const analyticsResult = await this.analytics.create(shortLinkResult.val.short, ttl)
+
+            if (analyticsResult.err) {
+                return analyticsResult
+            }
         }
-        return shortLinkResult
+
+        return Ok({
+            short: shortLinkResult.val.short.getResource(),
+            long: shortLinkResult.val.long.getResource(),
+            views: {
+                today: 0,
+                week: 0,
+                all: 0
+            }
+        })
     }
 
     async get(shortUrlUrn: ShortUrlUrn, start: number, end: number): Promise<Result<LinkInfo, Error | ShortUrlNotFoundError>> {
@@ -42,6 +56,7 @@ class LinksHandler {
         if (longUrlResult.err) {
             return longUrlResult
         }
+        //TODO: fix this
         return Ok({ timeseries: queryResult.val, url: longUrlResult.val.getResource() })
     }
 

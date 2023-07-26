@@ -1,0 +1,13 @@
+{
+  "urls": [
+    "https://google.com",
+    "https://theo.lol",
+    "technicallyvalid",
+    "morevalid.com",
+    "wss://localhost:8080",
+    "ftp://yeaholdprotocols",
+    "https://more👏emojis👏in👏urls👏when.gov",
+    "https://testing.multiple.subdomains.com",
+    "https://putsome.com/paths/here?and=maybe&some=query#paramstoo"
+  ]
+}

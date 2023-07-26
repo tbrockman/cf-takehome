@@ -1,4 +1,5 @@
 import { LinkTooLongError, LinkTooShortError, LongUrlNotFoundError, ShortLinkAlreadyExists, ShortLinkNotValidURL, ShortUrlNotFoundError } from "@/lib/errors"
+import { CreatedLinkURNs } from "@/lib/models/short-link"
 import { Shortener } from "@/lib/shortener"
 import { LongUrlUrn, ShortUrlUrn } from "@/lib/urns"
 import Redis from "ioredis"
@@ -30,9 +31,7 @@ describe('Shortener', () => {
             redis.incr.mockResolvedValue(1)
             const result = await shortener.createShortLink('noschemelol.com')
             expect(result.err).toEqual(false)
-            expect((result.val as ShortUrlUrn).getResource()).toEqual('b')
-            expect(result.err).toEqual(false)
-            expect(result.val).toBeInstanceOf(ShortUrlUrn)
+            expect((result.val as CreatedLinkURNs).short.getResource()).toEqual('b')
         })
         it('Returns an error if given a link that already exists', async () => {
             const url = 'https://google.com'
@@ -52,15 +51,15 @@ describe('Shortener', () => {
             redis.incr.mockResolvedValue(1)
             const result = await shortener.createShortLink(url)
             expect(result.err).toEqual(false)
-            expect((result.val as ShortUrlUrn).getResource()).toEqual('b')
+            expect((result.val as CreatedLinkURNs).short.getResource()).toEqual('b')
         })
-        it('Returns a short link if given a valid link', async () => {
+        it('Returns a short link if given a valid URL', async () => {
             const url = 'https://google.com'
             redis.hget.mockResolvedValue(null)
             redis.incr.mockResolvedValue(1)
             const result = await shortener.createShortLink(url)
             expect(result.err).toEqual(false)
-            expect((result.val as ShortUrlUrn).getResource()).toEqual('b')
+            expect((result.val as CreatedLinkURNs).short.getResource()).toEqual('b')
         })
     })
 

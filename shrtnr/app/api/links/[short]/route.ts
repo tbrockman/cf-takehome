@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server'
-import { Redis } from 'ioredis'
+import { redis } from '@/lib/redis'
 import { Analytics } from '@/lib/analytics'
 import { ShortUrlUrn } from '@/lib/urns'
 import { Shortener } from '@/lib/shortener'
 import { ShortLinkValidationError, ShortUrlNotFoundError } from '@/lib/errors'
 import { LinksHandler } from '@/lib/handlers/links'
 
-const redis = new Redis()
 const analytics = new Analytics(redis)
 const shortener = new Shortener(redis)
 const handler = new LinksHandler(analytics, shortener)

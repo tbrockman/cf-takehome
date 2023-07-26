@@ -8,7 +8,6 @@ services:
       - 8001:8001
     volumes:
       - ./.redis:/data
-
   # nextjs:
   #   depends_on:
   #     - prometheus
@@ -20,9 +19,24 @@ services:
   #     context: ./
   #     dockerfile: Dockerfile
 
-  prometheus:
-    image: prom/prometheus:latest
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   ports:
+  #     - 9090:9090
+  #   volumes:
+  #     - ./prometheus:/etc/prometheus
+
+  e2e:
+    profiles:
+      - testing
+    depends_on:
+      - redis
+    image: cloudflare/takehome
     ports:
-      - 9090:9090
-    volumes:
-      - ./prometheus:/etc/prometheus
+      - 3000:3000
+    environment:
+      - REDIS_HOST=redis
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    entrypoint: [ "yarn", "e2e:headless" ]

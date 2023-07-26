@@ -1,5 +1,6 @@
 import { Err, Ok, Result } from "ts-results-es"
 
+
 const base = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ123456789"
 
 function toBase58(id: number): string {

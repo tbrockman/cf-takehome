@@ -13,27 +13,18 @@ import WarningRoundedIcon from '@mui/icons-material/WarningRounded'
 import DeleteForever from '@mui/icons-material/DeleteForever'
 import IosShareIcon from '@mui/icons-material/IosShare'
 import { useState } from "react"
+import { ShortLink } from "@/lib/models/short-link"
 
-export type ShortLink = {
-    short: string,
-    long: string
-}
 
-export type ShortLinkFilled = ShortLink & {
-    short: string,
-    long: string,
-    views?: {
-        today: number,
-        week: number,
-        all: number
-    }
-}
+
+
 
 export type ShortLinkManagerProps = {
-    link: ShortLinkFilled
+    link: ShortLink,
+    setLink: (link: ShortLink | null) => void
 }
 
-export default function ShortLinkManager({ link }: ShortLinkManagerProps) {
+export default function ShortLinkManager({ link, setLink }: ShortLinkManagerProps) {
 
     const [open, setOpen] = useState<boolean>(false)
     const [isDeleting, setDeleting] = useState<boolean>(false)
@@ -47,13 +38,19 @@ export default function ShortLinkManager({ link }: ShortLinkManagerProps) {
     }
 
     const shareLink = () => {
-        navigator.share({ url: link.short })
+        navigator.share({ url: link.short.toString() })
     }
 
     const deleteLink = () => {
-        (async () => {
-            const response = await fetch(`/api/links${new URL(link.short).pathname}`, { method: 'DELETE' })
-        })()
+        console.log(link)
+        setDeleting(true)
+        fetch(`/api/links${link.short.pathname}`, { method: 'DELETE' }).then(response => {
+            if (response.ok) {
+                setDeleting(false)
+            }
+            setLink(null)
+            setOpen(false)
+        })
     }
 
     return (
@@ -79,18 +76,18 @@ export default function ShortLinkManager({ link }: ShortLinkManagerProps) {
                         <Button variant="plain" color="neutral" onClick={() => setOpen(false)}>
                             Cancel
                         </Button>
-                        <Button variant="solid" color="danger" onClick={deleteLink}>
+                        <Button loading={isDeleting} variant="solid" color="danger" onClick={deleteLink}>
                             Delete
                         </Button>
                     </Box>
                 </ModalDialog>
             </Modal>
             <Card variant='outlined' style={{ boxShadow: 'none' }}>
-
+                {/* @ts-ignore */}
                 <Table variant="plain" borderAxis="none" style={{ '--unstable_TableCell-height': 'none' }}>
                     <thead>
                         <tr>
-                            <th style={{ width: '40%' }}>Link</th>
+                            <th style={{ width: '40%' }}>Link 🩳</th>
                             <th>Last day</th>
                             <th>Last week</th>
                             <th>All time</th>
@@ -98,10 +95,10 @@ export default function ShortLinkManager({ link }: ShortLinkManagerProps) {
                     </thead>
                     <tbody>
                         <tr>
-                            <td><Link href={link.short}>{link.short}</Link></td>
-                            <td>2 views</td>
-                            <td>5 views</td>
-                            <td>69 views</td>
+                            <td><Link href={link.short.toString()}>{link.short.toString()}</Link></td>
+                            <td>{link.views.today} views</td>
+                            <td>{link.views.week} views</td>
+                            <td>{link.views.all} views</td>
                         </tr>
                     </tbody>
                 </Table>

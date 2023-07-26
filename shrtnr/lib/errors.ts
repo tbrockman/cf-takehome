@@ -1,3 +1,4 @@
+import { ShortUrlUrn } from '@/lib/urns'
 import { LongUrlUrn, ShortUrlUrn } from "./urns"
 
 export class ShortLinkValidationError extends Error {
@@ -18,11 +19,13 @@ export class ShortLinkNotValidURL extends ShortLinkValidationError {
     }
 }
 export class ShortLinkAlreadyExists extends Error {
-    link: string
+    short: ShortUrlUrn
+    long: LongUrlUrn
 
-    constructor(urn: LongUrlUrn, link: string) {
-        super(`Short link for "${urn}" already exists`)
-        this.link = link
+    constructor(long: LongUrlUrn, short: ShortUrlUrn) {
+        super(`Short link for "${long}" already exists`)
+        this.short = short
+        this.long = long
     }
 }
 export class LongUrlNotFoundError extends Error {

@@ -4,25 +4,62 @@ import FormLabel from "@mui/joy/FormLabel"
 import FormControl from "@mui/joy/FormControl"
 import React from "react"
 import Grid from "@mui/joy/Grid/Grid"
-import ShortLinkManager, { ShortLink } from "./ShortLinkManager"
+import ShortLinkManager from "./ShortLinkManager"
+import { URLWithoutProtocol } from "@/lib/urls"
+import { PartialShortLink, ShortLink } from "@/lib/models/short-link"
+
+
+
 
 export default function LinkShortenerInput() {
 
-    const [link, setLink] = React.useState<ShortLink | null>()
-    const options = [
+    const [creating, setCreating] = React.useState<boolean>(false)
+    const [link, setLink] = React.useState<PartialShortLink | null>(null)
+    const options: PartialShortLink[] = [
         {
-            "short": "https://shrtnr.com/abc123",
-            "long": "https://www.google.com/search?q=abc123"
+            "short": new URLWithoutProtocol("https://shrtnr.com/abc123"),
+            "long": new URLWithoutProtocol("https://www.google.com/search?q=abc123"),
+            "views": {
+                today: 0,
+                week: 0,
+                all: 0
+            }
         },
         {
-            "short": "https://shrtnr.com/def456",
-            "long": "https://theo.lol"
+            "short": new URLWithoutProtocol("https://shrtnr.com/def456"),
+            "long": new URLWithoutProtocol("https://theo.lol"),
+            "views": {
+                today: 0,
+                week: 0,
+                all: 0
+            }
         },
         {
-            "short": "https://shrtnr.com/ghi789",
-            "long": "https://www.google.com/search?q=ghi789"
+            "short": new URLWithoutProtocol("https://shrtnr.com/ghi789"),
+            "long": new URLWithoutProtocol("https://www.google.com/search?q=ghi789"),
+            "views": {
+                today: 0,
+                week: 0,
+                all: 0
+            }
         }
     ]
+
+    const createLink = (url: string) => {
+        setCreating(true)
+        fetch('/api/links', {
+            method: 'POST',
+            body: JSON.stringify({ url })
+        })
+            .then(response => response.json())
+            .then((data: ShortLink) => {
+                console.log(data)
+                data.short = new URLWithoutProtocol(data.short)
+                data.long = new URLWithoutProtocol(data.long)
+                setLink(data)
+                setCreating(false)
+            })
+    }
 
     return (
         <Grid container marginTop={'30vh'} spacing={1} flexDirection={'column'} maxWidth={'600px'}>
@@ -30,22 +67,44 @@ export default function LinkShortenerInput() {
                 <FormControl id="find-or-shorten-form">
                     <FormLabel style={{ fontSize: '28px', marginBottom: '7px' }}>🔍 Find or 🩳 shorten a 🔗 link</FormLabel>
                     <Autocomplete
-                        value={link?.long}
-                        onChange={(event, newValue) => {
-                            console.log('being changed', event, newValue)
-                            if (typeof newValue === 'string') {
-                                console.log('its a strin gbaby')
+                        placeholder={'https://xyz.abc/123'}
+                        value={link?.long.toString()}
+                        onChange={(event, newValue, reason) => {
+                            console.log('being changed', event, newValue, reason)
+                            // if (typeof newValue === 'string' && newValue.length > 0 && event.type === 'keydown') {
+                            //     createLink(newValue)
+                            // }
+
+                            if (reason === 'selectOption' && newValue) {
+                                // It will be an object if it's an option which was returned by search
+                                if (typeof newValue === 'object') {
+
+                                    if (newValue.short) {
+                                        setLink(newValue)
+                                    }
+                                    else {
+                                        createLink(newValue.long.toString())
+                                    }
+                                }
+                                // Otherwise, it's a string
+                                else {
+                                    createLink(newValue)
+                                }
                             }
-                            else if (typeof newValue === 'object') {
-                                setLink(newValue)
+                            else if (reason === 'clear') {
+                                setLink(null)
+                            }
+                            else if (reason === 'createOption' && typeof newValue === 'string') {
+                                createLink(newValue)
                             }
                         }}
                         style={{ padding: '0 24px' }}
-                        isOptionEqualToValue={(option, value) => option.long === value.long}
+                        isOptionEqualToValue={(option, value) => option?.long === value?.long}
                         options={options}
                         freeSolo
                         selectOnFocus
                         handleHomeEndKeys
+                        autoFocus
                         clearOnEscape
                         renderOption={(props, option) => {
                             const style = {
@@ -59,9 +118,9 @@ export default function LinkShortenerInput() {
                                 return (
                                     <AutocompleteOption {...props}>
                                         <Grid display={"flex"} container flexDirection={"row"} width={"100%"}>
-                                            <Grid xs={7}>{option.long}</Grid>
+                                            <Grid xs={7}>{option.long.toString()}</Grid>
                                             <Grid xs={1} textAlign={'right'}>🩳</Grid>
-                                            <Grid xs={4} textAlign={'right'}>{option.short}</Grid>
+                                            <Grid xs={4} textAlign={'right'}>{option.short.toString()}</Grid>
                                         </Grid>
                                     </AutocompleteOption>
                                 )
@@ -70,7 +129,7 @@ export default function LinkShortenerInput() {
                                 return (
                                     <AutocompleteOption {...props}>
                                         <Grid display={"flex"} container flexDirection={"row"} width={"100%"}>
-                                            <Grid>{option.long}</Grid>
+                                            <Grid>{option.text}</Grid>
                                             <Grid>&nbsp;👖✂️</Grid>
                                         </Grid>
                                     </AutocompleteOption>
@@ -79,14 +138,20 @@ export default function LinkShortenerInput() {
                         }}
                         sx={{ width: 600, maxWidth: '100%', borderRadius: '12px' }}
                         getOptionLabel={(option) =>
-                            typeof option === 'string' ? option : option.long
+                            typeof option === 'string' ? option : option.long.toString()
                         }
                         filterOptions={(options, params) => {
 
                             if (params.inputValue !== '') {
                                 options.push({
-                                    short: '',
-                                    long: `Shorten "${params.inputValue}"`,
+                                    short: null,
+                                    long: params.inputValue,
+                                    text: `Shorten "${params.inputValue}"`,
+                                    views: {
+                                        today: 0,
+                                        week: 0,
+                                        all: 0
+                                    }
                                 })
                             }
                             return options
@@ -95,7 +160,7 @@ export default function LinkShortenerInput() {
                 </FormControl>
             </Grid>
             <Grid>
-                {link && <ShortLinkManager link={link} />}
+                {link && <ShortLinkManager link={link as ShortLink} setLink={setLink} />}
             </Grid>
         </Grid>
     )

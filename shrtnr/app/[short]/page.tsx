@@ -1,11 +1,10 @@
 import { notFound, redirect } from 'next/navigation'
 import { Shortener } from '@/lib/shortener'
 import { ShortUrlNotFoundError } from '@/lib/errors'
-import { Redis } from 'ioredis'
+import { redis } from '@/lib/redis'
 import { Analytics } from '@/lib/analytics'
 import { ShortUrlUrn } from '@/lib/urns'
 
-const redis = new Redis()
 const analytics = new Analytics(redis)
 const shortener = new Shortener(redis)
 

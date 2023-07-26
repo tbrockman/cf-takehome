@@ -1,8 +1,14 @@
+import { URLWithoutProtocol } from '@/lib/urls'
 import { Redis } from 'ioredis'
 import { Err, Ok, Result } from 'ts-results-es'
-import { LongUrlNotFoundError, ShortLinkAlreadyExists, ShortLinkNotValidURL, LinkTooLongError, LinkTooShortError, ShortLinkValidationError, ShortUrlNotFoundError, SearchQueryTooShort } from './errors'
-import { CounterUrn, LongUrlUrn, SearchUrn, ShortUrlUrn } from './urns'
-import { toBase58, wrapResultAsync } from './util'
+import {
+    LongUrlNotFoundError, ShortLinkAlreadyExists, ShortLinkNotValidURL,
+    LinkTooLongError, LinkTooShortError, ShortLinkValidationError,
+    ShortUrlNotFoundError, SearchQueryTooShort
+} from '@/lib/errors'
+import { CounterUrn, LongUrlUrn, SearchUrn, ShortUrlUrn } from '@/lib/urns'
+import { toBase58, wrapResultAsync } from '@/lib/util'
+import { CreatedLinkURNs } from "@/lib/models/short-link"
 import { basicURLParse, serializeURL } from 'whatwg-url'
 
 const SHORT_LINK_NAME = 'short_urls'
@@ -10,6 +16,7 @@ const SHORT_LINK_COUNTER_URN = new CounterUrn(SHORT_LINK_NAME)
 const SHORT_LINK_SEARCH_URN = new SearchUrn(SHORT_LINK_NAME)
 const SHORT_LINK_MAX_LENGTH = 2048
 const SHORT_LINK_MIN_LENGTH = 3
+
 
 class Shortener {
 
@@ -19,7 +26,7 @@ class Shortener {
         this.redis = redis
     }
 
-    async createShortLink(url: string, ttl?: number): Promise<Result<ShortUrlUrn, Error | ShortLinkAlreadyExists | ShortLinkValidationError>> {
+    async createShortLink(url: string, ttl?: number): Promise<Result<CreatedLinkURNs, Error | ShortLinkAlreadyExists | ShortLinkValidationError>> {
         const parseResult = this._parseLink(url)
         const longUrlUrn = new LongUrlUrn(parseResult.val.toString())
 
@@ -30,10 +37,14 @@ class Shortener {
         const shortLinkResult = await this.getShortLink(longUrlUrn)
 
         if (shortLinkResult.ok) {
-            return Err(new ShortLinkAlreadyExists(longUrlUrn, shortLinkResult.val.getResource()))
+            return Err(new ShortLinkAlreadyExists(longUrlUrn, shortLinkResult.val))
         }
         const shortUrlUrn = await this._generateShortLink(longUrlUrn, ttl)
-        return Ok(shortUrlUrn)
+
+        return Ok({
+            short: shortUrlUrn,
+            long: longUrlUrn
+        })
     }
 
     private _parseLink(url: string): Result<URL, ShortLinkValidationError> {
@@ -67,6 +78,7 @@ class Shortener {
 
         // Store the short and long links in Redis
         const shortUrlUrn = new ShortUrlUrn(link)
+        const longUrl = new URLWithoutProtocol(longUrlUrn.getResource())
 
         // Parse the protocol from the long URL
         // If not present, assume HTTPS
@@ -82,14 +94,14 @@ class Shortener {
 
         if (ttl) {
             await this.redis.hset(longUrlUrn.toString(), 'short', link, 'EX', ttl)
-            await this.redis.hset(shortUrlUrn.toString(), 'long', longUrlUrn.getResource(), 'EX', ttl)
+            await this.redis.hset(shortUrlUrn.toString(), 'long', longUrl.toString(), 'protocol', longUrl.protocol, 'EX', ttl)
             await this.redis.expire(SHORT_LINK_SEARCH_URN.toString(), ttl)
         }
         else {
             await this.redis.hset(longUrlUrn.toString(), 'short', link)
-            await this.redis.hset(shortUrlUrn.toString(), 'long', longUrlUrn.getResource())
+            await this.redis.hset(shortUrlUrn.toString(), 'long', longUrl.toString(), 'protocol', longUrl.protocol,)
         }
-        // Return short link
+        // Return short linkw
         return shortUrlUrn
     }
 
@@ -136,8 +148,8 @@ class Shortener {
             throw new ShortUrlNotFoundError(shortUrlUrn)
         }
         const urlUrn = new LongUrlUrn(url)
-        await this.redis.hdel(shortUrlUrn.toString())
-        await this.redis.hdel(urlUrn.toString())
+        await this.redis.del(shortUrlUrn.toString())
+        await this.redis.del(urlUrn.toString())
     }
 
     async search(query: string): Promise<Result<any, Error | SearchQueryTooShort>> {

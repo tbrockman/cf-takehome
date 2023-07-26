@@ -5,5 +5,6 @@ RUN yarn install
 ENV HOST=0.0.0.0
 ENV PORT=3000
 COPY . .
+RUN yarn build
 EXPOSE 3000
-ENTRYPOINT yarn dev
+ENTRYPOINT yarn start

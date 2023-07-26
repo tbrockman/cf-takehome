@@ -14,6 +14,9 @@ make build
 ```
 
 ### Test
+```shell
+
+```
 
 ### Run
 
@@ -72,6 +75,9 @@ Since it's an internal service, some might be tempted to say performance doesn't
 "End user" friendly seems to imply "build a UI" to me.
 "Developer friendly" suggests "API with some amount of documentation." 
 
+> Generating a short url from a long url
+Some common internal services (like go/links) allow you to specify your own custom short URL for a given link. The use of the word "generating" here seems to imply this isn't the case.
+
 ## Architecture
 
 
@@ -92,4 +98,4 @@ Since it's an internal service, some might be tempted to say performance doesn't
   * We use Redis' Time Series for storing link analytics, but without any compaction enabled (which would improve performance and reduce necessary storage)
   * The application is built for local development, and doesn't produce an optimized production build. In the case of Next.js, this means re-compiling on requests to pages.
 * Error-handling:
-  * Client doesn't render any sort of useful messages or information when something goes wrong. Luckily nothing ever goes wrong in demos so this won't be apparent to anyone who looks at this.
+  * Client doesn't render any sort of useful messages or information when something goes wrong (like trying to generate a short link from an invalid URL). Luckily nothing ever goes wrong in demos so this won't be apparent to anyone who looks at this.
