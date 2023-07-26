@@ -16,12 +16,21 @@ import { useState } from "react"
 
 export type ShortLink = {
     short: string,
+    long: string
+}
+
+export type ShortLinkFilled = ShortLink & {
+    short: string,
     long: string,
-    timeseries: any[]
+    views?: {
+        today: number,
+        week: number,
+        all: number
+    }
 }
 
 export type ShortLinkManagerProps = {
-    link: ShortLink
+    link: ShortLinkFilled
 }
 
 export default function ShortLinkManager({ link }: ShortLinkManagerProps) {
@@ -33,11 +42,18 @@ export default function ShortLinkManager({ link }: ShortLinkManagerProps) {
         setOpen(true)
     }
 
+    const getLink = () => {
+
+    }
+
+    const shareLink = () => {
+        navigator.share({ url: link.short })
+    }
+
     const deleteLink = () => {
-        const test = async () => {
+        (async () => {
             const response = await fetch(`/api/links${new URL(link.short).pathname}`, { method: 'DELETE' })
-        }
-        test()
+        })()
     }
 
     return (
@@ -92,7 +108,7 @@ export default function ShortLinkManager({ link }: ShortLinkManagerProps) {
                 {/* TODO: On-click delete with confirmation */}
                 <Grid container flexDirection={'row'} spacing={1} padding={'0 0.5rem'} paddingTop='1rem'>
                     <Grid>
-                        <Button color='primary' variant='solid' startDecorator={<IosShareIcon />}>
+                        <Button color='primary' variant='solid' startDecorator={<IosShareIcon />} onClick={shareLink}>
                             Share
                         </Button>
                     </Grid>

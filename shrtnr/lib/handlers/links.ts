@@ -17,8 +17,7 @@ class LinksHandler {
     }
 
     async post(url: string, ttl?: number): Promise<Result<ShortUrlUrn, Error>> {
-        const longUrlUrn = new LongUrlUrn(url)
-        const shortLinkResult = await this.shortener.createShortLink(longUrlUrn, ttl)
+        const shortLinkResult = await this.shortener.createShortLink(url, ttl)
 
         if (shortLinkResult.err) {
             return shortLinkResult

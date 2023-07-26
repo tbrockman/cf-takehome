@@ -67,10 +67,17 @@ class TrackerUrn extends Urn {
     }
 }
 
+class SearchUrn extends Urn {
+    constructor(resource: string) {
+        super('search', resource)
+    }
+}
+
 export {
     Urn,
     ShortUrlUrn,
     LongUrlUrn,
     CounterUrn,
-    TrackerUrn
+    TrackerUrn,
+    SearchUrn
 }

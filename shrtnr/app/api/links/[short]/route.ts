@@ -3,7 +3,7 @@ import { Redis } from 'ioredis'
 import { Analytics } from '@/lib/analytics'
 import { ShortUrlUrn } from '@/lib/urns'
 import { Shortener } from '@/lib/shortener'
-import { ShortUrlNotFoundError } from '@/lib/errors'
+import { ShortLinkValidationError, ShortUrlNotFoundError } from '@/lib/errors'
 import { LinksHandler } from '@/lib/handlers/links'
 
 const redis = new Redis()
@@ -114,6 +114,9 @@ export async function GET(request: Request, { params }: { params: { short: strin
 
         if (result.val instanceof ShortUrlNotFoundError || result.val.message.includes('ERR TSDB: the key does not exist')) {
             return NextResponse.json({ error: `Link "${short}" not found.` }, { status: 404 })
+        }
+        else if (result.val instanceof ShortLinkValidationError) {
+            return NextResponse.json({ error: result.val.message }, { status: 400 })
         }
         return NextResponse.json({ error: result.val.message }, { status: 500 })
     }

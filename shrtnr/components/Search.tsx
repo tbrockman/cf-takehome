@@ -8,22 +8,19 @@ import ShortLinkManager, { ShortLink } from "./ShortLinkManager"
 
 export default function LinkShortenerInput() {
 
-    const [link, setLink] = React.useState<ShortLink>()
+    const [link, setLink] = React.useState<ShortLink | null>()
     const options = [
         {
             "short": "https://shrtnr.com/abc123",
-            "long": "https://www.google.com/search?q=abc123",
-            "timeseries": [],
+            "long": "https://www.google.com/search?q=abc123"
         },
         {
             "short": "https://shrtnr.com/def456",
-            "long": "https://theo.lol",
-            "timeseries": [],
+            "long": "https://theo.lol"
         },
         {
             "short": "https://shrtnr.com/ghi789",
-            "long": "https://www.google.com/search?q=ghi789",
-            "timeseries": [],
+            "long": "https://www.google.com/search?q=ghi789"
         }
     ]
 
@@ -31,13 +28,15 @@ export default function LinkShortenerInput() {
         <Grid container marginTop={'30vh'} spacing={1} flexDirection={'column'} maxWidth={'600px'}>
             <Grid maxWidth='100%'>
                 <FormControl id="find-or-shorten-form">
-                    <FormLabel style={{ fontSize: '28px', marginBottom: '7px' }}>🔍 Find or 🩳 shorten a 🔗 URL</FormLabel>
+                    <FormLabel style={{ fontSize: '28px', marginBottom: '7px' }}>🔍 Find or 🩳 shorten a 🔗 link</FormLabel>
                     <Autocomplete
                         value={link?.long}
                         onChange={(event, newValue) => {
+                            console.log('being changed', event, newValue)
                             if (typeof newValue === 'string') {
+                                console.log('its a strin gbaby')
                             }
-                            else if (typeof newValue === 'object' && newValue != null) {
+                            else if (typeof newValue === 'object') {
                                 setLink(newValue)
                             }
                         }}
@@ -47,11 +46,18 @@ export default function LinkShortenerInput() {
                         freeSolo
                         selectOnFocus
                         handleHomeEndKeys
+                        clearOnEscape
                         renderOption={(props, option) => {
+                            const style = {
+                                ...props.style,
+                                paddingLeft: '23px',
+                                paddingRight: '23px'
+                            }
+                            props.style = style
 
                             if (option.short) {
                                 return (
-                                    <AutocompleteOption {...props} style={{ paddingLeft: '23px', paddingRight: '23px' }}>
+                                    <AutocompleteOption {...props}>
                                         <Grid display={"flex"} container flexDirection={"row"} width={"100%"}>
                                             <Grid xs={7}>{option.long}</Grid>
                                             <Grid xs={1} textAlign={'right'}>🩳</Grid>
@@ -80,7 +86,6 @@ export default function LinkShortenerInput() {
                             if (params.inputValue !== '') {
                                 options.push({
                                     short: '',
-                                    timeseries: [],
                                     long: `Shorten "${params.inputValue}"`,
                                 })
                             }

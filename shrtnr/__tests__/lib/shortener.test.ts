@@ -5,37 +5,60 @@ import Redis from "ioredis"
 jest.mock('ioredis')
 
 describe('Shortener', () => {
-    const redis = jest.mocked(new Redis())
-    const shortener = new Shortener(redis)
+
+    let redis: jest.MockedObjectDeep<Redis>
+    let shortener: Shortener
+
+    beforeEach(() => {
+        redis = jest.mocked(new Redis())
+        shortener = new Shortener(redis)
+    })
 
     describe('createShortLink', () => {
         it('Returns an error if given a link that is too short', async () => {
-            const result = await shortener.createShortLink(new LongUrlUrn('a'))
+            const result = await shortener.createShortLink('a')
             expect(result.err).toEqual(true)
             expect(result.val).toBeInstanceOf(LinkTooShortError)
         })
         it('Returns an error if given a link that is too long', async () => {
-            const result = await shortener.createShortLink(new LongUrlUrn('https://' + 'a'.repeat(2048) + '.com'))
+            const result = await shortener.createShortLink('https://' + 'a'.repeat(2048) + '.com')
             expect(result.err).toEqual(true)
             expect(result.val).toBeInstanceOf(LinkTooLongError)
         })
-        it('Returns an error if given a link that not a URL', async () => {
-            const result = await shortener.createShortLink(new LongUrlUrn('hahahanotaurl'))
-            expect(result.err).toEqual(true)
-            expect(result.val).toBeInstanceOf(ShortLinkNotValidURL)
+        it('Assumes protocol is HTTPS if given an otherwise valid URL', async () => {
+            redis.hget.mockResolvedValue(null)
+            redis.incr.mockResolvedValue(1)
+            const result = await shortener.createShortLink('noschemelol.com')
+            expect(result.err).toEqual(false)
+            expect((result.val as ShortUrlUrn).getResource()).toEqual('b')
+            expect(result.err).toEqual(false)
+            expect(result.val).toBeInstanceOf(ShortUrlUrn)
         })
         it('Returns an error if given a link that already exists', async () => {
             const url = 'https://google.com'
             redis.hget.mockResolvedValue(url)
-            const result = await shortener.createShortLink(new LongUrlUrn(url))
+            const result = await shortener.createShortLink(url)
             expect(result.err).toEqual(true)
             expect(result.val).toBeInstanceOf(ShortLinkAlreadyExists)
+        })
+        // TODO: this is an e2e test
+        // it('Returns an error if a given link was created without a protocol, and then the same link is created with https', async () => {
+        //     const url = 'google.com'
+        //     redis.hget.mockResolvedValue(url)
+        // })
+        it('Returns a short link with regardless of protocol', async () => {
+            const url = 'wss://test.com'
+            redis.hget.mockResolvedValue(null)
+            redis.incr.mockResolvedValue(1)
+            const result = await shortener.createShortLink(url)
+            expect(result.err).toEqual(false)
+            expect((result.val as ShortUrlUrn).getResource()).toEqual('b')
         })
         it('Returns a short link if given a valid link', async () => {
             const url = 'https://google.com'
             redis.hget.mockResolvedValue(null)
             redis.incr.mockResolvedValue(1)
-            const result = await shortener.createShortLink(new LongUrlUrn(url))
+            const result = await shortener.createShortLink(url)
             expect(result.err).toEqual(false)
             expect((result.val as ShortUrlUrn).getResource()).toEqual('b')
         })
@@ -89,5 +112,16 @@ describe('Shortener', () => {
             const result = await shortener.delete(new ShortUrlUrn(url))
             expect(result.err).toEqual(false)
         })
+    })
+
+    describe('search', () => {
+        it('Returns an empty list if no short links found', async () => {
+            // redis.call.mockResolvedValue([])
+            // const result = await shortener.search('google')
+            // expect(result.err).toEqual(false)
+            // expect(result.val).toEqual([])
+        })
+        it('Returns an error if the search query is too short', async () => { })
+        it('Returns a list of results containing both the short link and long URL', async () => { })
     })
 })
