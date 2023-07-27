@@ -6,8 +6,6 @@ This project requires [`docker`](https://docs.docker.com/get-docker/), [`node.js
 
 ## Commands
 
-There's a Makefile where you can see some of the orchestration that was supposed to be available, but I ran out of time.
-
 In the `shrtnr` folder:
 
 ### Installation
@@ -26,9 +24,43 @@ In the `shrtnr` folder:
 
 `yarn start`
 
+There's also a Makefile where you can see some of the orchestration that was supposed to be available (and it's littered in `package.json`), but I ran out of time.
+
 ### Documentation
 
 After starting the application, you can find the OpenAPI documentation by navigating to [localhost:3000/docs](http://localhost:3000/docs) and JSON spec at [http://localhost:3000/api/doc](http://localhost:3000/api/doc).
+
+### Project structure 
+
+```shell
+shrtnr/
+├── __tests__ # Jest unit tests folder
+│   └── lib
+├── app # Mainly Next.js API routes and pages (mainly just parsing params and interpreting results)
+│   ├── [short] # Endpoint responsible for redirects to long URLs
+│   ├── api # Backend routes
+│   │   ├── admin 
+│   │   │   └── clean # Endpoint to clear all Redis data, only used for testing
+│   │   ├── doc # Endpoint which returns JSON OpenAPI spec
+│   │   └── links # API endpoints for creating, getting, deleting, and searching links
+│   │       ├── [short] # Endpoints for creating, getting, and deleting
+│   │       └── search # Endpoint for searching
+│   └── docs # Swagger UI
+├── components # Frontend React components
+├── cypress # Cypress end-to-end testing framework  
+│   ├── downloads # Nothing to see here
+│   ├── e2e # This folder is where the tests are
+│   │   └── spec.cy.ts # End-to-end tests, can be ran headless or interactively
+│   ├── fixtures # Just some JSON data for creating test short links in end-to-end tests 
+│   ├── screenshots # Nothing to see here
+│   └── support # Nothing to see here
+├── lib # Some shared code, mainly actual business logic here
+│   ├── handlers # Misnomer, there's only a single handler and it's responsible for /links/ API functionality
+│   └── models # Not really database models, I just threw some types here
+├── prometheus # A scraper config that I didn't get to setup
+└── scripts # If there were scripts, they would be here
+    └── init # A folder container the command to create the search index in Redis
+```
 
 ## Prompt
 
@@ -121,6 +153,6 @@ Here's how we do the rest of what was asked for:
   * We use Redis' Time Series for storing link analytics, but without any compaction enabled (which would improve performance and reduce storage footprint)
 * Deployment:
   * Because we leverage Redis, our API routes are *not* compatible with Edge runtimes (despite Cloudflare Workers now support TCP connections -- `ioredis` still assumes a Node.js environment) -- meaning deploying our application would require running a Node.js server somewhere.
-  * The current docker compose file (provided for simplicity of execution) likely isn't what we would want to deploy to production. We would probably want to create a Kubernetes manifests with necessary service and deployment specs (containing some concrete resource budgets) and horizontal pod autoscaling.
+  * The current docker compose file (provided for simplicity of execution) likely isn't what we would want to deploy to production. We would probably want to create Kubernetes manifests with necessary service and deployment specs (containing some concrete resource budgets) and horizontal pod autoscaling.
 * UX:
   * Error-handling: Client doesn't render any sort of useful messages or information when something goes wrong (like trying to generate a short link from an invalid URL). Luckily nothing ever goes wrong in demos so this won't be apparent to anyone who looks at this.

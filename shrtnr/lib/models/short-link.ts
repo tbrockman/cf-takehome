@@ -1,5 +1,3 @@
-import { LongUrlUrn, ShortUrlUrn } from "@/lib/urns"
-
 type LinkStats = {
     today: number
     week: number
