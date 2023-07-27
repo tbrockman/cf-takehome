@@ -44,12 +44,11 @@ class Analytics {
     async sum(resource: Urn, start: number, end: number): Promise<Result<number, Error | TimeseriesNotFoundError>> {
         return await tryResultAsync<number, Error | TimeseriesNotFoundError>(async () => {
             const urn = new TimeseriesUrn(resource.toString())
-            const sum = await this.redis.call('TS.RANGE', urn.toString(), start, end, 'AGGREGATION', 'SUM', 1) as number | null
-
-            if (!sum) {
+            const buckets = await this.redis.call('TS.RANGE', urn.toString(), start, end, 'AGGREGATION', 'SUM', 1000 * 60 * 60) as [number, string][]
+            if (!buckets) {
                 throw new TimeseriesNotFoundError(urn)
             }
-            return sum
+            return buckets.map(([_, b]) => Number.parseInt(b)).reduce((acc, curr) => acc + curr, 0)
         })
     }
 

@@ -7,11 +7,13 @@ import Grid from "@mui/joy/Grid/Grid"
 import ShortLinkManager from "./ShortLinkManager"
 import { URLWithoutProtocol } from "@/lib/urls"
 import { PartialShortLink, ShortLink, ShortLinkData, ShortLinkDataWithoutViews } from "@/lib/models/short-link"
+import { createFilterOptions } from "@mui/joy/Autocomplete"
 
 
 export default function LinkShortenerInput() {
     const ref = useRef<HTMLInputElement>(null)
-    const [creating, setCreating] = React.useState<boolean>(false)
+    const [loading, setLoading] = React.useState<boolean>(false)
+    const [loadingMessage, setLoadingMessage] = React.useState<string>('')
     const [inputValue, setInputValue] = React.useState<string>('')
     const [link, setLink] = React.useState<PartialShortLink | null>(null)
     const [options, setOptions] = useState<PartialShortLink[]>([])
@@ -24,16 +26,13 @@ export default function LinkShortenerInput() {
             fetch(`/api/links/search`, { method: 'POST', body: JSON.stringify({ query: inputValue }) })
                 .then(response => response.json())
                 .then(({ results }: { results: ShortLinkDataWithoutViews[] }) => {
-
-                    if (results) {
-                        const mapped = results.map(link => {
-                            return {
-                                short: new URLWithoutProtocol(link.short),
-                                long: new URLWithoutProtocol(link.long)
-                            }
-                        })
-                        setOptions(mapped)
-                    }
+                    const mapped = results.map(link => {
+                        return {
+                            short: new URLWithoutProtocol(link.short),
+                            long: new URLWithoutProtocol(link.long)
+                        }
+                    })
+                    setOptions(mapped)
                 })
                 .catch(error => console.error(error))
         }
@@ -52,7 +51,8 @@ export default function LinkShortenerInput() {
     }
 
     const createLink = (url: string) => {
-        setCreating(true)
+        setLoading(true)
+        setLoadingMessage('Shortening link...')
         fetch('/api/links', {
             method: 'POST',
             body: JSON.stringify({ url })
@@ -62,9 +62,13 @@ export default function LinkShortenerInput() {
                 data.short = new URLWithoutProtocol(data.short)
                 data.long = new URLWithoutProtocol(data.long)
                 setLink(data)
-                setCreating(false)
+                setLoading(false)
             })
     }
+
+    const filterOptions = createFilterOptions<PartialShortLink>({
+        stringify: (option) => URL.prototype.toString.apply(option.long),
+    })
 
     return (
         <Grid container marginTop={'30vh'} spacing={1} flexDirection={'column'} maxWidth={'600px'}>
@@ -72,9 +76,11 @@ export default function LinkShortenerInput() {
                 <FormControl id="find-or-shorten-form">
                     <FormLabel style={{ fontSize: '28px', marginBottom: '7px' }}>🔍 Find or 🩳 shorten a 🔗 link</FormLabel>
                     <Autocomplete
-                        placeholder={'https://xyz.abc/123'}
+                        placeholder={'your.link/here'}
                         value={link?.long.toString()}
                         inputValue={inputValue}
+                        loading={loading}
+                        loadingText={loadingMessage}
                         onInputChange={(_, newInputValue) => {
                             setInputValue(newInputValue)
                         }}
@@ -110,6 +116,9 @@ export default function LinkShortenerInput() {
                         selectOnFocus
                         handleHomeEndKeys
                         autoFocus
+                        filterSelectedOptions
+                        autoHighlight
+                        autoSelect
                         clearOnEscape
                         slotProps={{
                             input: {
@@ -127,10 +136,9 @@ export default function LinkShortenerInput() {
                             if (option.short) {
                                 return (
                                     <AutocompleteOption {...props}>
-                                        <Grid display={"flex"} container flexDirection={"row"} width={"100%"}>
-                                            <Grid xs={7}>{option.long.toString()}</Grid>
-                                            <Grid xs={1} textAlign={'right'}>🩳</Grid>
-                                            <Grid xs={4} textAlign={'right'}>{option.short.toString()}</Grid>
+                                        <Grid display={"flex"} container justifyContent={'space-between'} flexDirection={"row"} width={"100%"}>
+                                            <Grid xs={8}>{option.long.toString()}</Grid>
+                                            <Grid xs={4} textAlign={'left'}>🩳 {option.short.toString()}</Grid>
                                         </Grid>
                                     </AutocompleteOption>
                                 )
@@ -151,6 +159,8 @@ export default function LinkShortenerInput() {
                             typeof option === 'string' ? option : option.long.toString()
                         }
                         filterOptions={(options, params) => {
+
+                            options = filterOptions(options, params)
 
                             if (params.inputValue !== '') {
                                 options.push({

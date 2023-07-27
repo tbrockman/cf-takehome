@@ -7,6 +7,8 @@
     "google.com/specific/result",
     "anotherwebsite.com/with/google/in/it",
     "https://google.com/another/specific/result",
+    "https://google.com/xyz/specific/result?with=query&params=too",
+    "https://google.com/boop/result?with=query&params=too#andhashes",
     "ws://google.com/websocket",
     "https://testing.one.two/a",
     "https://testing.one.three/b",

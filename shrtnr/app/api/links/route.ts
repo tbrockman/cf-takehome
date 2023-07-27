@@ -89,13 +89,13 @@ export async function POST(request: Request) {
 
     if (result.ok || result.val instanceof ShortLinkAlreadyExists) {
         const data = result.val as ShortLinkData
-        const location = newURLWithPathname(request.url, `api/links/${data.short}}`)
+        const location = newURLWithPathname(request.url, `api/links/${data.short}`)
         const body = {
             short: newURLWithPathname(request.url, data.short),
-            long: new URL(data.long),
+            long: data.long,
             views: data.views
         }
-        return NextResponse.json(body, { status: result.ok ? 201 : 200, headers: { Location: location.toString() } })
+        return NextResponse.json(body, { status: 201, headers: { Location: location.toString() } })
     }
     else {
         if (result.val instanceof ShortLinkValidationError) {

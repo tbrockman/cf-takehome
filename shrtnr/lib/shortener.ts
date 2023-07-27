@@ -7,9 +7,8 @@ import {
     ShortUrlNotFoundError, SearchQueryTooShort
 } from '@/lib/errors'
 import { CounterUrn, LongUrlUrn, SearchUrn, ShortUrlUrn } from '@/lib/urns'
-import { toBase58, tryResultAsync } from '@/lib/util'
+import { toBase58, tryParseURL, tryResultAsync } from '@/lib/util'
 import { ShortLinkData, ShortLinkDataWithoutViews } from "@/lib/models/short-link"
-import { basicURLParse, serializeURL } from 'whatwg-url'
 import { escapePunctuation } from './redis'
 
 const SHORT_LINK_NAME = 'short_urls'
@@ -72,17 +71,12 @@ class Shortener {
         if (url.replace(PROTOCOL_REGEX, '') == '') {
             return Err(new ShortLinkNotValidURL(url))
         }
-        let result = basicURLParse(url) ?? basicURLParse(`https://${url}`)
+        let result = tryParseURL(url)
 
-        if (!result) {
+        if (result.err) {
             return Err(new ShortLinkNotValidURL(url))
         }
-        const serialized = serializeURL(result)
-
-        if (!serialized) {
-            return Err(new ShortLinkNotValidURL(url))
-        }
-        return Ok(new URL(serialized))
+        return result
     }
 
     private async _generateShortLink(longUrlUrn: LongUrlUrn, ttl?: number): Promise<ShortUrlUrn> {

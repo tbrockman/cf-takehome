@@ -88,7 +88,7 @@ export default function ShortLinkManager({ link, setLink, setInputValue }: Short
                 <Table variant="plain" borderAxis="none" style={{ '--unstable_TableCell-height': 'none' }}>
                     <thead>
                         <tr>
-                            <th style={{ width: '40%' }}>Link 🩳</th>
+                            <th style={{ width: '40%' }}>🩳+🔗</th>
                             <th>Last day</th>
                             <th>Last week</th>
                             <th>All time</th>

@@ -1,42 +1,43 @@
-# cf-takehome
+# shrtnr
 
 ## Prerequisites
 
-This project requires [`docker`](https://docs.docker.com/get-docker/), [`node.js`](https://nodejs.org/en), and [`yarn`](https://classic.yarnpkg.com/en/docs/install).
+This project requires [`docker`](https://docs.docker.com/get-docker/) (and `docker compose`), [`node.js`](https://nodejs.org/en), and [`yarn`](https://classic.yarnpkg.com/en/docs/install).
 
 ## Commands
 
-In the `shrtnr` folder:
+In the `shrtnr` directory:
 
-### Installation
+```shell
+# install - downloads dependencies
+yarn install 
 
-`yarn install`
+# test - runs unit and e2e tests in headless mode
+yarn test
 
-### Testing
+# build - creates an optimized production build
+yarn build
 
-`yarn test`
+# start - starts a server serving the production build
+yarn start
 
-### Building
-
-`yarn build`
-
-### Running
-
-`yarn start`
-
-There's also a Makefile where you can see some of the orchestration that was supposed to be available (and it's littered in `package.json`), but I ran out of time.
+# dev - a slower environment but reloads on code changes
+yarn dev
+```
 
 ### Documentation
 
-After starting the application, you can find the OpenAPI documentation by navigating to [localhost:3000/docs](http://localhost:3000/docs) and JSON spec at [http://localhost:3000/api/doc](http://localhost:3000/api/doc).
+After starting the application, you can find the OpenAPI documentation by navigating to [localhost:3000/docs](http://localhost:3000/docs) and JSON spec at [localhost:3000/api/doc](http://localhost:3000/api/doc).
+
+There's also a Makefile where you can see some of the orchestration that was supposed to be available (and it's littered in `package.json`), but I ran out of time.
 
 ### Project structure 
 
 ```shell
 shrtnr/
-├── __tests__ # Jest unit tests folder
+├── __tests__ # Jest unit tests folder (I don't like the naming convention but I'm not breaking it)
 │   └── lib
-├── app # Mainly Next.js API routes and pages (mainly just parsing params and interpreting results)
+├── app # Next.js API routes and pages (mainly just parsing params and interpreting results)
 │   ├── [short] # Endpoint responsible for redirects to long URLs
 │   ├── api # Backend routes
 │   │   ├── admin 
@@ -105,9 +106,9 @@ Project Requirements:
 
 To the untrained eye this *sounds* like it would imply a meager scale, but as anyone who has operated a few internal services knows: *it's only a matter of time before someone uses it in production*.
 
-But we do make the assumption that all links can reasonably fit into memory since we're using Redis as our backend. Even a worst case scenario of storing [~a billion links](https://www.forbes.com/advisor/business/software/website-statistics/#:~:text=1.,are%20actively%20maintained%20and%20visited.), an average of [~77 characters per URL](http://www.supermind.org/blog/740/average-length-of-a-url-part-2), and 4 bytes to encode each character using UTF-32 at worst, we'd need in the ballpark of 308 GB of memory to store links once (not considering keys and additional indexes). Let's say between 1-2 TB to be safe. Not something most people are running on their laptops, but pretty feasible. [With sharding and replication](https://redis.io/docs/management/scaling/), we can scale our storage layer to reach pretty high throughput while storing a good amount of data. I've ignored the fact that we're also storing a time series for tracking link accesses.
+But we do make the assumption that all links can reasonably fit into memory since we're using Redis as our backend. Even a **worst** case scenario of storing [~a billion links](https://www.forbes.com/advisor/business/software/website-statistics/#:~:text=1.,are%20actively%20maintained%20and%20visited.), an average of [~77 characters per URL](http://www.supermind.org/blog/740/average-length-of-a-url-part-2), and 4 bytes to encode each character using UTF-32 at worst, we'd need in the ballpark of 308 GB of memory to store links once (not considering keys and additional indexes). Let's say between 1-2 TB to be safe. Not something most people are running on their laptops, but pretty feasible. [With sharding and replication](https://redis.io/docs/management/scaling/), we can scale our storage layer to reach pretty high throughput while storing a good amount of data. I've ignored the fact that we're also storing a time series for tracking link accesses.
 
-Since it's an internal service, some might be tempted to say performance doesn't really matter. Apparently employees aren't revenue generating like users 🤷. But we make an effort to return 
+Since it's an internal service, some might be tempted to say performance doesn't really matter. Apparently employees aren't revenue generating like users 🤷. But it should still be pretty fast (minus the Javascript-y bits, anyhow).
 
 ### UX
 > Please try to make it both end user and developer friendly
@@ -141,7 +142,7 @@ Here's how we do the rest of what was asked for:
 ## What's missing for production
 
 * Auth*: 
-  * Redis is accessible to anyone, we would want to restrict access to certain privileged accounts (and store those credentials in a secret management tool of some sort)
+  * Redis is accessible to anyone, we would want to restrict access to certain accounts (and store those credentials in a secret management tool of some sort)
   * No authentication for the shortener service itself. Anyone can create and delete whatever links they want. Since this is an internal service, we would likely want to implement something OpenID/SAML compatible to facilitate single-sign on. There's also an exposed endpoint that you can use to drop all data in Redis.
 * Redis:
   * Transactions:

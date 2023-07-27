@@ -12,10 +12,27 @@ function toBase58(id: number): string {
 	return result
 }
 
+function removeTrailingSlash(url: string) {
+	return url.replace(/\/$/, "")
+}
+
 function newURLWithPathname(base: string, short: string,): URL {
 	const clone = new URL(base)
 	clone.pathname = short
 	return clone
+}
+
+function tryParseURL(url: string): Result<URL, Error> {
+	try {
+		return Ok(new URL(url))
+	} catch (error: any) {
+		try {
+			return Ok(new URL(`https://${url}`))
+		}
+		catch {
+			return Err(error instanceof Error ? error : new Error(error))
+		}
+	}
 }
 
 async function tryResultAsync<T, E = Error>(
@@ -29,4 +46,4 @@ async function tryResultAsync<T, E = Error>(
 	}
 }
 
-export { toBase58, tryResultAsync, newURLWithPathname }
+export { toBase58, tryResultAsync, newURLWithPathname, tryParseURL, removeTrailingSlash }

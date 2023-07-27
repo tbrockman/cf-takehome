@@ -16,6 +16,7 @@ services:
     volumes:
       - ./scripts/init:/home/init
     # Create our index contained in /home/init/redis.txt
+    # See https://redis.io/docs/interact/search-and-query/basic-constructs/configuration-parameters/ for config
     entrypoint:
       [
         "sh",

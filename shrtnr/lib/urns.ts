@@ -1,3 +1,5 @@
+import { removeTrailingSlash } from "@/lib/util"
+
 class Urn {
     namespace: string
     type: string
@@ -6,7 +8,7 @@ class Urn {
     constructor(type: string, resource: string) {
         this.namespace = 'urn:shrtnr'
         this.type = type
-        this.resource = resource
+        this.resource = removeTrailingSlash(resource)
     }
 
     toString() {
