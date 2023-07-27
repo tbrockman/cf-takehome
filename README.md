@@ -9,19 +9,27 @@ This project requires [`docker`](https://docs.docker.com/get-docker/) (and `dock
 In the `shrtnr` directory:
 
 ```shell
-# install - downloads dependencies
+# download dependencies
 yarn install 
+```
 
-# test - runs unit and e2e tests in headless mode
+```shell
+# runs unit and e2e tests in headless mode
 yarn test
+```
 
-# build - creates an optimized production build
+```shell
+# creates an optimized production build
 yarn build
+```
 
-# start - starts a server serving the production build
+```shell
+# starts a server serving the production build
 yarn start
+```
 
-# dev - a slower environment but reloads on code changes
+```shell
+# dev environment with poor performance but hot reloads
 yarn dev
 ```
 
@@ -29,7 +37,7 @@ yarn dev
 
 After starting the application, you can find the OpenAPI documentation by navigating to [localhost:3000/docs](http://localhost:3000/docs) and JSON spec at [localhost:3000/api/doc](http://localhost:3000/api/doc).
 
-There's also a Makefile where you can see some of the orchestration that was supposed to be available (and it's littered in `package.json`), but I ran out of time.
+There's also a Makefile where you can see some of the orchestration that was supposed to be available (some littered in `package.json` as well), but I ran out of time before digging into observability.
 
 ### Project structure 
 
@@ -58,9 +66,9 @@ shrtnr/
 ├── lib # Some shared code, mainly actual business logic here
 │   ├── handlers # Misnomer, there's only a single handler and it's responsible for /links/ API functionality
 │   └── models # Not really database models, I just threw some types here
-├── prometheus # A scraper config that I didn't get to setup
-└── scripts # If there were scripts, they would be here
-    └── init # A folder container the command to create the search index in Redis
+├── scripts # If there were scripts, they would be here
+│   └── init # A folder container the command to create the search index in Redis
+└── Makefile # Initially intended to be the entrypoint for most work in the repo, ended up falling mainly to package.json
 ```
 
 ## Prompt
@@ -108,7 +116,7 @@ To the untrained eye this *sounds* like it would imply a meager scale, but as an
 
 But we do make the assumption that all links can reasonably fit into memory since we're using Redis as our backend. Even a **worst** case scenario of storing [~a billion links](https://www.forbes.com/advisor/business/software/website-statistics/#:~:text=1.,are%20actively%20maintained%20and%20visited.), an average of [~77 characters per URL](http://www.supermind.org/blog/740/average-length-of-a-url-part-2), and 4 bytes to encode each character using UTF-32 at worst, we'd need in the ballpark of 308 GB of memory to store links once (not considering keys and additional indexes). Let's say between 1-2 TB to be safe. Not something most people are running on their laptops, but pretty feasible. [With sharding and replication](https://redis.io/docs/management/scaling/), we can scale our storage layer to reach pretty high throughput while storing a good amount of data. I've ignored the fact that we're also storing a time series for tracking link accesses.
 
-Since it's an internal service, some might be tempted to say performance doesn't really matter. Apparently employees aren't revenue generating like users 🤷. But it should still be pretty fast (minus the Javascript-y bits, anyhow).
+Since it's an internal service, some might be tempted to say performance doesn't really matter. Some might believe employees aren't revenue generating like users. The app should still be pretty fast.
 
 ### UX
 > Please try to make it both end user and developer friendly
@@ -139,21 +147,52 @@ Here's how we do the rest of what was asked for:
 - [x] No duplicate URLs are allowed to be created ➡️ Store a key-value pair of long URL -> short.
 - [x] Generating a short url from a long url ➡️ We atomically increment a counter and encode it to base58 as the short URL. An alternative would be to store a hash of the long URL and only store a prefix. We won't have collisions but our URLs are a bit more guessable and *technically* you can create an infinite redirect loop if you take advantage of that -- you could do the same with hashing but you're probably better off just mining Bitcoin.
 
+Next.js and React were chosen primarily for developer productivity reasons.
+
+Given more time, I would probably re-write the backend in Rust.
+
 ## What's missing for production
 
-* Auth*: 
+* **Auth\*:**
   * Redis is accessible to anyone, we would want to restrict access to certain accounts (and store those credentials in a secret management tool of some sort)
   * No authentication for the shortener service itself. Anyone can create and delete whatever links they want. Since this is an internal service, we would likely want to implement something OpenID/SAML compatible to facilitate single-sign on. There's also an exposed endpoint that you can use to drop all data in Redis.
-* Redis:
-  * Transactions:
+* **Redis:**
+  * **Transactions:**
     * Right now certain operations (deleting a short link, creating a short link) can execute and partially fail because they manipulate data using multiple transactions. 
     * While unlikely, these operations should be executed atomically (all or nothing).
     * Technically it's possible for people competing to store the same link at the exact same time to store it twice because we do a GET *and then* SET
-  * Pipelining (sending multiple commands without waiting serially for their results) would also greatly improve performance (but isn't enabled).
-  * RedisStack currently enables all additional modules (even though we only use RedisSearch), it would need to be configured to disable anything else
-  * We use Redis' Time Series for storing link analytics, but without any compaction enabled (which would improve performance and reduce storage footprint)
-* Deployment:
-  * Because we leverage Redis, our API routes are *not* compatible with Edge runtimes (despite Cloudflare Workers now support TCP connections -- `ioredis` still assumes a Node.js environment) -- meaning deploying our application would require running a Node.js server somewhere.
+  * **Pipelining**: (sending multiple commands without waiting serially for their results) would improve performance (but isn't enabled).
+  * RedisStack currently enables all additional modules (even though we only use RedisSearch), needs to be configured to remove what isn't needed.
+  * We use Redis Timeseries for storing link analytics, but without any compaction enabled (which would improve performance and reduce storage footprint)
+* **Deployment:**
+  * Because we leverage Redis, our API routes are *not* compatible with Edge runtimes (although Cloudflare Workers support TCP connections -- `ioredis` still assumes a Node.js environment) -- meaning deploying our application would require running a Node.js server somewhere.
   * The current docker compose file (provided for simplicity of execution) likely isn't what we would want to deploy to production. We would probably want to create Kubernetes manifests with necessary service and deployment specs (containing some concrete resource budgets) and horizontal pod autoscaling.
-* UX:
-  * Error-handling: Client doesn't render any sort of useful messages or information when something goes wrong (like trying to generate a short link from an invalid URL). Luckily nothing ever goes wrong in demos so this won't be apparent to anyone who looks at this.
+* **UX:**
+  * **Error-handling:** Client doesn't render any sort of useful messages or information when something goes wrong (like trying to generate a short link from an invalid URL). Luckily nothing ever goes wrong in demos so this won't be apparent to anyone who looks at this.
+  * **Progress indicators/Animations:** Not a lot of feedback is given to the user on why the UI is stalling before loading something
+  * **Mobile:** I haven't even *looked* at what the UI looks like in mobile.
+* **Tech-debt:** 
+  * Code started getting worse and worse, some files are tough to read. Need betters tests as well.
+  * Front-end code isn't optimal
+
+## Troubleshooting
+
+If you run into the following error:
+```
+https://nextjs.org/docs/messages/module-not-found
+- wait compiling /instrumentation (client and server)...
+- error ./app/page.tsx:2:0
+Module not found: Can't resolve '@mui/joy/styles'
+  1 | "use client"
+> 2 | import { CssVarsProvider, extendTheme } from '@mui/joy/styles'
+  3 | import Grid from '@mui/joy/Grid'
+  4 | import LinkShortenerInput from "@/components/Search"
+  5 |
+```
+
+Run:
+```
+yarn add @mui/joy
+```
+
+If you run into data related issues, RedisStack also has a UI running at [localhost:8001/](http://localhost:8001/) to help you filter through data.

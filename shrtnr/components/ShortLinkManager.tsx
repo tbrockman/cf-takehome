@@ -34,10 +34,6 @@ export default function ShortLinkManager({ link, setLink, setInputValue }: Short
         setOpen(true)
     }
 
-    const getLink = () => {
-
-    }
-
     const shareLink = () => {
         navigator.share({ url: URL.prototype.toString.apply(link.short) })
     }
@@ -47,6 +43,8 @@ export default function ShortLinkManager({ link, setLink, setInputValue }: Short
         fetch(`/api/links${link.short.pathname}`, { method: 'DELETE' }).then(response => {
             if (response.ok) {
                 setDeleting(false)
+                // TODO: delete link from list
+
             }
             setLink(null)
             setInputValue('')

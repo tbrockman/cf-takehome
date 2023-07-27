@@ -4,6 +4,7 @@ import FormLabel from "@mui/joy/FormLabel"
 import FormControl from "@mui/joy/FormControl"
 import React, { useEffect, useRef, useState } from "react"
 import Grid from "@mui/joy/Grid/Grid"
+import CircularProgress from "@mui/joy/CircularProgress"
 import ShortLinkManager from "./ShortLinkManager"
 import { URLWithoutProtocol } from "@/lib/urls"
 import { PartialShortLink, ShortLink, ShortLinkData, ShortLinkDataWithoutViews } from "@/lib/models/short-link"
@@ -13,7 +14,6 @@ import { createFilterOptions } from "@mui/joy/Autocomplete"
 export default function LinkShortenerInput() {
     const ref = useRef<HTMLInputElement>(null)
     const [loading, setLoading] = React.useState<boolean>(false)
-    const [loadingMessage, setLoadingMessage] = React.useState<string>('')
     const [inputValue, setInputValue] = React.useState<string>('')
     const [link, setLink] = React.useState<PartialShortLink | null>(null)
     const [options, setOptions] = useState<PartialShortLink[]>([])
@@ -22,7 +22,7 @@ export default function LinkShortenerInput() {
         if (inputValue == '') {
             ref.current?.focus()
         }
-        else if (inputValue.length > 1) {
+        if (inputValue.length > 1) {
             fetch(`/api/links/search`, { method: 'POST', body: JSON.stringify({ query: inputValue }) })
                 .then(response => response.json())
                 .then(({ results }: { results: ShortLinkDataWithoutViews[] }) => {
@@ -39,6 +39,7 @@ export default function LinkShortenerInput() {
     }, [inputValue])
 
     const getLink = (url: string) => {
+        setLoading(true)
         fetch(`/api/links/${url}`)
             .then(response => response.json())
             .then((data: ShortLinkData) => {
@@ -47,12 +48,12 @@ export default function LinkShortenerInput() {
                     long: new URLWithoutProtocol(data.long),
                     views: data.views
                 })
+                setLoading(false)
             })
     }
 
     const createLink = (url: string) => {
         setLoading(true)
-        setLoadingMessage('Shortening link...')
         fetch('/api/links', {
             method: 'POST',
             body: JSON.stringify({ url })
@@ -63,6 +64,11 @@ export default function LinkShortenerInput() {
                 data.long = new URLWithoutProtocol(data.long)
                 setLink(data)
                 setLoading(false)
+            })
+            .catch(error => {
+                console.error(error)
+                setLoading(false)
+                setLink(null)
             })
     }
 
@@ -77,15 +83,14 @@ export default function LinkShortenerInput() {
                     <FormLabel style={{ fontSize: '28px', marginBottom: '7px' }}>🔍 Find or 🩳 shorten a 🔗 link</FormLabel>
                     <Autocomplete
                         placeholder={'your.link/here'}
-                        value={link?.long.toString()}
+                        value={link?.long.toString() || null}
                         inputValue={inputValue}
                         loading={loading}
-                        loadingText={loadingMessage}
                         onInputChange={(_, newInputValue) => {
                             setInputValue(newInputValue)
                         }}
                         onChange={(event, newValue, reason) => {
-
+                            console.log(event, newValue, reason)
                             if (reason === 'selectOption' && newValue) {
                                 // It will be an object if it's an option which was returned by search
                                 if (typeof newValue === 'object') {
@@ -104,6 +109,7 @@ export default function LinkShortenerInput() {
                             }
                             else if (reason === 'clear') {
                                 setLink(null)
+                                setOptions([])
                             }
                             else if (reason === 'createOption' && typeof newValue === 'string') {
                                 createLink(newValue)
@@ -119,6 +125,11 @@ export default function LinkShortenerInput() {
                         filterSelectedOptions
                         autoHighlight
                         autoSelect
+                        endDecorator={
+                            loading ? (
+                                <CircularProgress size="sm" sx={{ bgcolor: 'background.surface' }} />
+                            ) : null
+                        }
                         clearOnEscape
                         slotProps={{
                             input: {
@@ -162,7 +173,7 @@ export default function LinkShortenerInput() {
 
                             options = filterOptions(options, params)
 
-                            if (params.inputValue !== '') {
+                            if (params.inputValue !== '' && params.inputValue.length > 2) {
                                 options.push({
                                     short: null,
                                     long: params.inputValue,

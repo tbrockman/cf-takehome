@@ -27,8 +27,8 @@ services:
   nextjs:
     profiles:
       - prod
+      - e2e
     depends_on:
-      # - prometheus
       - redis-init
     ports:
       - 3000:3000
@@ -37,24 +37,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-  # prometheus:
-  #   image: prom/prometheus:latest
-  #   ports:
-  #     - 9090:9090
-  #   volumes:
-  #     - ./prometheus:/etc/prometheus
+    entrypoint: [ "yarn", "next:start" ]
 
-  # e2e:
-  #   profiles:
-  #     - testing
-  #   depends_on:
-  #     - redis-init
-
-  #   ports:
-  #     - 3000:3000
-  #   environment:
-  #     - REDIS_HOST=redis
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   entrypoint: [ "yarn", "e2e:headless" ]
+  cypress:
+    profiles:
+      - e2e
+    depends_on:
+      - redis-init
+    image: cypress/included:3.2.0
+    volumes:
+      - ./:/e2e
+    working_dir: /e2e

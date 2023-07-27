@@ -20,7 +20,7 @@ export default function Home() {
 
 	return (
 		<CssVarsProvider theme={theme}>
-			<Grid component={"main"} maxWidth={"100%"} display={"flex"} flexGrow={"1"} justifyContent={"center"}>
+			<Grid component={"main"} maxWidth={"100%"} display={"flex"} flexGrow={"1"} justifyContent={"center"} alignItems={"center"} padding={"1rem"}>
 				<LinkShortenerInput />
 			</Grid>
 		</CssVarsProvider>
