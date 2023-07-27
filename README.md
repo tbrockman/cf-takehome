@@ -118,6 +118,10 @@ But we do make the assumption that all links can reasonably fit into memory sinc
 
 Since it's an internal service, some might be tempted to say performance doesn't really matter. Some might believe employees aren't revenue generating like users. The app should still be pretty fast.
 
+### Security
+
+There's no mention of any security requirements here (like that URLs can't be guessable or anything of that nature), so I'm assuming that it's fine for the design to allow anyone to enumerate through all URLs which might be stored using our service.
+
 ### UX
 > Please try to make it both end user and developer friendly
 
@@ -145,9 +149,9 @@ Redis solves for:
 Here's how we do the rest of what was asked for:
 - [x] Has one long URL ➡️ Store a key-value pair of short URL -> long.
 - [x] No duplicate URLs are allowed to be created ➡️ Store a key-value pair of long URL -> short.
-- [x] Generating a short url from a long url ➡️ We atomically increment a counter and encode it to base58 as the short URL. An alternative would be to store a hash of the long URL and only store a prefix. We won't have collisions but our URLs are a bit more guessable and *technically* you can create an infinite redirect loop if you take advantage of that -- you could do the same with hashing but you're probably better off just mining Bitcoin.
+- [x] Generating a short url from a long url ➡️ We atomically increment a counter and [base58 encode it](https://learnmeabitcoin.com/technical/base58#why-base58) as the short URL. An alternative would be to store a hash of the long URL and only store a prefix. We won't have collisions but our URLs are a bit more guessable and *technically* you can create an infinite redirect loop if you take advantage of that -- you could do the same with hashing but you're probably better off just mining Bitcoin.
 
-Next.js and React were chosen primarily for developer productivity reasons.
+Next.js (and Reach) were chosen primarily for productivity reasons.
 
 Given more time, I would probably re-write the backend in Rust.
 
