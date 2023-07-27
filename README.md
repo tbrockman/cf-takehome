@@ -142,7 +142,7 @@ Next.js (React + Node.js) -> Redis
 
 **Alternative consideration:**
 
-If there weren't a requirement that it had to be runnable locally, I would've been cheeky and written one function in a Cloudflare worker and used KV as the storage backend, and then leveraged Cloudflare's endpoint analytics instead of writing anything myself. (Part of me still thinks this would've been worth it )
+If there weren't a requirement that it had to be runnable locally, I would've been cheeky and written everything in a Cloudflare worker and used KV as the storage backend, and then leveraged Cloudflare's endpoint analytics (which isn't available locally) instead of writing anything myself (part of me still thinks this would've been worth it just for the memes).
 
 ### Why & how
 
