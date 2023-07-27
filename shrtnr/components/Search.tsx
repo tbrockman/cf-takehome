@@ -22,6 +22,7 @@ export default function LinkShortenerInput() {
         if (inputValue == '') {
             ref.current?.focus()
         }
+        // TODO: debounce
         if (inputValue.length > 1) {
             fetch(`/api/links/search`, { method: 'POST', body: JSON.stringify({ query: inputValue }) })
                 .then(response => response.json())

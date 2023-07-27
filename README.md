@@ -67,8 +67,10 @@ shrtnr/
 │   ├── handlers # Misnomer, there's only a single handler and it's responsible for /links/ API functionality
 │   └── models # Not really database models, I just threw some types here
 ├── scripts # If there were scripts, they would be here
-│   └── init # A folder container the command to create the search index in Redis
-└── Makefile # Initially intended to be the entrypoint for most work in the repo, ended up falling mainly to package.json
+│   └── init # A folder containing the command to create the search index in Redis
+└── package.json # Typical package.json, contains entrypoints for working on the project as well as listed dependencies
+Makefile # Initially intended to be the entrypoint for most work in the repo, ended up falling mainly to package.json
+README.md # This file
 ```
 
 ## Prompt
