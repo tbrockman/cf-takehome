@@ -1,5 +1,5 @@
 import { LongUrlUrn, ShortUrlUrn, TimeseriesUrn } from '@/lib/urns'
-import { ShortLinkData } from '@lib/models/short-link'
+import { ShortLinkData } from '@/lib/models/short-link'
 
 export class ShortLinkValidationError extends Error {
 }
@@ -19,6 +19,9 @@ export class ShortLinkNotValidURL extends ShortLinkValidationError {
     }
 }
 export class ShortLinkAlreadyExists extends Error implements ShortLinkData {
+    short: string
+    long: string
+    views: { today: number; week: number; all: number }
 
     constructor(long: LongUrlUrn, link: ShortLinkData) {
         super(`Short link for "${long}" already exists`)

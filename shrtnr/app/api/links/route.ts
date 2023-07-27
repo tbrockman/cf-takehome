@@ -5,6 +5,7 @@ import { Shortener } from '@/lib/shortener'
 import { ShortLinkAlreadyExists, ShortLinkValidationError } from '@/lib/errors'
 import { LinksHandler } from '@/lib/handlers/links'
 import { newURLWithPathname } from '@/lib/util'
+import { ShortLink, ShortLinkData } from '@/lib/models/short-link'
 
 const analytics = new Analytics(redis)
 const shortener = new Shortener(redis)
@@ -86,18 +87,18 @@ export async function POST(request: Request) {
     const { url, ttl }: { url: string, ttl: undefined | number } = await request.json()
     const result = await handler.post(url, ttl)
 
-    if (result.ok) {
-        const location = newURLWithPathname(request.url, `api/links/${result.val.short}}`)
-        result.val.short = newURLWithPathname(request.url, result.val.short?.toString() || '')
-
-        return NextResponse.json(result.val, { status: 201, headers: { Location: location.toString() } })
+    if (result.ok || result.val instanceof ShortLinkAlreadyExists) {
+        const data = result.val as ShortLinkData
+        const location = newURLWithPathname(request.url, `api/links/${data.short}}`)
+        const body = {
+            short: newURLWithPathname(request.url, data.short),
+            long: new URL(data.long),
+            views: data.views
+        }
+        return NextResponse.json(body, { status: result.ok ? 201 : 200, headers: { Location: location.toString() } })
     }
     else {
-        if (result.val instanceof ShortLinkAlreadyExists) {
-            result.val.link.short = newURLWithPathname(request.url, result.val.link.short.toString() || '')
-            return NextResponse.json(result.val.link, { status: 200 })
-        }
-        else if (result.val instanceof ShortLinkValidationError) {
+        if (result.val instanceof ShortLinkValidationError) {
             return NextResponse.json({ error: result.val.message }, { status: 400 })
         }
         else {

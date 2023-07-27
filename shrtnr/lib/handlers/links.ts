@@ -3,9 +3,8 @@ import { Shortener } from "@/lib/shortener"
 import { ShortLinkAlreadyExists, ShortUrlNotFoundError } from '../errors'
 import { Err, Ok, Result } from "ts-results-es"
 import { ShortUrlUrn } from "@/lib/urns"
-import { PartialShortLink, ShortLink } from "@/lib/models/short-link"
+import { ShortLinkData } from "@/lib/models/short-link"
 
-export type LinkInfo = { timeseries: Timeseries<number>, url: string }
 const ONE_DAY = 24 * 60 * 60 * 1000
 const ONE_WEEK = 7 * ONE_DAY
 
@@ -19,8 +18,7 @@ class LinksHandler {
         this.shortener = shortener
     }
 
-    // TODO: return type shouldn't be PartialShortLink here (we know the links will be defined or return an error)
-    async post(url: string, ttl?: number): Promise<Result<PartialShortLink, Error>> {
+    async post(url: string, ttl?: number): Promise<Result<ShortLinkData, Error>> {
         const shortLinkResult = await this.shortener.createShortLink(url, ttl)
 
         if (shortLinkResult.err && !(shortLinkResult.val instanceof ShortLinkAlreadyExists)) {
@@ -35,11 +33,10 @@ class LinksHandler {
                 return analyticsResult
             }
         }
-
-        return Ok(shortLinkResult.val)
+        return Ok(shortLinkResult.val as ShortLinkData)
     }
 
-    async get(shortUrlUrn: ShortUrlUrn): Promise<Result<ShortLink, Error | ShortUrlNotFoundError>> {
+    async get(shortUrlUrn: ShortUrlUrn): Promise<Result<ShortLinkData, Error | ShortUrlNotFoundError>> {
         // Retrieve analytics for a short link from Redis
         const now = new Date().getTime()
         const dayAgo = now - ONE_DAY
@@ -64,7 +61,7 @@ class LinksHandler {
         if (longUrlResult.err) {
             return longUrlResult
         }
-        const result: ShortLink = { views: { today, week, all }, long: longUrlResult.val.getResource(), short: shortUrlUrn.getResource() }
+        const result = { views: { today, week, all }, long: longUrlResult.val.getResource(), short: shortUrlUrn.getResource() }
         return Ok(result)
     }
 
@@ -75,6 +72,10 @@ class LinksHandler {
             return shortenerResult
         }
         return await this.analytics.delete(shortUrlUrn)
+    }
+
+    async search(query: string) {
+        return this.shortener.search(query)
     }
 }
 

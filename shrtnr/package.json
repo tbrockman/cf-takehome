@@ -4,15 +4,19 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "yarn redis:up && next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest --watch",
-    "redis": "docker compose up -d || true",
+    "test": "jest && yarn e2e:headless",
+    "jest": "jest --watch",
+    "test:interactive": "npm-run-all --parallel --print-label jest e2e",
+    "redis:up": "docker compose up -d || true",
+    "redis:down": "docker compose down || true",
+    "attach": "docker compose up",
     "cypress": "cypress open --e2e",
     "cypress:headless": "cypress run --browser=chrome --headless",
-    "e2e:headless": "start-server-and-test dev http://0.0.0.0:3000 \"yarn cypress:headless\"",
-    "e2e": "yarn redis && start-server-and-test dev http://localhost:3000 \"yarn cypress\""
+    "e2e:headless": "yarn redis:up && start-server-and-test dev http://0.0.0.0:3000 \"yarn cypress:headless\"",
+    "e2e": "yarn redis:up && start-server-and-test dev http://0.0.0.0:3000 \"yarn cypress\""
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",
@@ -48,6 +52,7 @@
     "encoding": "^0.1.13",
     "jest": "^29.6.1",
     "jest-environment-jsdom": "^29.6.1",
+    "npm-run-all": "^4.1.5",
     "start-server-and-test": "^2.0.0"
   },
   "resolutions": {

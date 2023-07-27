@@ -22,9 +22,10 @@ import { ShortLink } from "@/lib/models/short-link"
 export type ShortLinkManagerProps = {
     link: ShortLink,
     setLink: (link: ShortLink | null) => void
+    setInputValue: (value: string) => void
 }
 
-export default function ShortLinkManager({ link, setLink }: ShortLinkManagerProps) {
+export default function ShortLinkManager({ link, setLink, setInputValue }: ShortLinkManagerProps) {
 
     const [open, setOpen] = useState<boolean>(false)
     const [isDeleting, setDeleting] = useState<boolean>(false)
@@ -42,13 +43,13 @@ export default function ShortLinkManager({ link, setLink }: ShortLinkManagerProp
     }
 
     const deleteLink = () => {
-        console.log(link)
         setDeleting(true)
         fetch(`/api/links${link.short.pathname}`, { method: 'DELETE' }).then(response => {
             if (response.ok) {
                 setDeleting(false)
             }
             setLink(null)
+            setInputValue('')
             setOpen(false)
         })
     }

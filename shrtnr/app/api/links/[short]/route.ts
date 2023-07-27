@@ -5,6 +5,7 @@ import { ShortUrlUrn } from '@/lib/urns'
 import { Shortener } from '@/lib/shortener'
 import { ShortLinkValidationError, ShortUrlNotFoundError } from '@/lib/errors'
 import { LinksHandler } from '@/lib/handlers/links'
+import { newURLWithPathname } from '@/lib/util'
 
 const analytics = new Analytics(redis)
 const shortener = new Shortener(redis)
@@ -116,7 +117,12 @@ export async function GET(request: Request, { params }: { params: { short: strin
         }
         return NextResponse.json({ error: result.val.message }, { status: 500 })
     }
-    return NextResponse.json(result.val, { status: 200 })
+    const body = {
+        long: new URL(result.val.long),
+        short: newURLWithPathname(request.url, result.val.short),
+        views: result.val.views
+    }
+    return NextResponse.json(body, { status: 200 })
 }
 
 export async function DELETE(_: Request, { params }: { params: { short: string } }) {

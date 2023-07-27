@@ -2,48 +2,54 @@ import Autocomplete from "@mui/joy/Autocomplete"
 import AutocompleteOption from '@mui/joy/AutocompleteOption'
 import FormLabel from "@mui/joy/FormLabel"
 import FormControl from "@mui/joy/FormControl"
-import React from "react"
+import React, { useEffect, useRef, useState } from "react"
 import Grid from "@mui/joy/Grid/Grid"
 import ShortLinkManager from "./ShortLinkManager"
 import { URLWithoutProtocol } from "@/lib/urls"
-import { PartialShortLink, ShortLink } from "@/lib/models/short-link"
-
-
+import { PartialShortLink, ShortLink, ShortLinkData, ShortLinkDataWithoutViews } from "@/lib/models/short-link"
 
 
 export default function LinkShortenerInput() {
-
+    const ref = useRef<HTMLInputElement>(null)
     const [creating, setCreating] = React.useState<boolean>(false)
+    const [inputValue, setInputValue] = React.useState<string>('')
     const [link, setLink] = React.useState<PartialShortLink | null>(null)
-    const options: PartialShortLink[] = [
-        {
-            "short": new URLWithoutProtocol("https://shrtnr.com/abc123"),
-            "long": new URLWithoutProtocol("https://www.google.com/search?q=abc123"),
-            "views": {
-                today: 0,
-                week: 0,
-                all: 0
-            }
-        },
-        {
-            "short": new URLWithoutProtocol("https://shrtnr.com/def456"),
-            "long": new URLWithoutProtocol("https://theo.lol"),
-            "views": {
-                today: 0,
-                week: 0,
-                all: 0
-            }
-        },
-        {
-            "short": new URLWithoutProtocol("https://shrtnr.com/ghi789"),
-            "long": new URLWithoutProtocol("https://www.google.com/search?q=ghi789"),
-            "views": {
-                today: 0,
-                week: 0,
-                all: 0
-            }
+    const [options, setOptions] = useState<PartialShortLink[]>([])
+
+    useEffect(() => {
+        if (inputValue == '') {
+            ref.current?.focus()
         }
-    ]
+        else if (inputValue.length > 1) {
+            fetch(`/api/links/search`, { method: 'POST', body: JSON.stringify({ query: inputValue }) })
+                .then(response => response.json())
+                .then(({ results }: { results: ShortLinkDataWithoutViews[] }) => {
+
+                    if (results) {
+                        const mapped = results.map(link => {
+                            return {
+                                short: new URLWithoutProtocol(link.short),
+                                long: new URLWithoutProtocol(link.long)
+                            }
+                        })
+                        setOptions(mapped)
+                    }
+                })
+                .catch(error => console.error(error))
+        }
+    }, [inputValue])
+
+    const getLink = (url: string) => {
+        fetch(`/api/links/${url}`)
+            .then(response => response.json())
+            .then((data: ShortLinkData) => {
+                setLink({
+                    short: new URLWithoutProtocol(data.short),
+                    long: new URLWithoutProtocol(data.long),
+                    views: data.views
+                })
+            })
+    }
 
     const createLink = (url: string) => {
         setCreating(true)
@@ -53,7 +59,6 @@ export default function LinkShortenerInput() {
         })
             .then(response => response.json())
             .then((data: ShortLink) => {
-                console.log(data)
                 data.short = new URLWithoutProtocol(data.short)
                 data.long = new URLWithoutProtocol(data.long)
                 setLink(data)
@@ -69,18 +74,18 @@ export default function LinkShortenerInput() {
                     <Autocomplete
                         placeholder={'https://xyz.abc/123'}
                         value={link?.long.toString()}
+                        inputValue={inputValue}
+                        onInputChange={(_, newInputValue) => {
+                            setInputValue(newInputValue)
+                        }}
                         onChange={(event, newValue, reason) => {
-                            console.log('being changed', event, newValue, reason)
-                            // if (typeof newValue === 'string' && newValue.length > 0 && event.type === 'keydown') {
-                            //     createLink(newValue)
-                            // }
 
                             if (reason === 'selectOption' && newValue) {
                                 // It will be an object if it's an option which was returned by search
                                 if (typeof newValue === 'object') {
 
-                                    if (newValue.short) {
-                                        setLink(newValue)
+                                    if (newValue.short && newValue.short instanceof URL) {
+                                        getLink(newValue.short.pathname)
                                     }
                                     else {
                                         createLink(newValue.long.toString())
@@ -106,6 +111,11 @@ export default function LinkShortenerInput() {
                         handleHomeEndKeys
                         autoFocus
                         clearOnEscape
+                        slotProps={{
+                            input: {
+                                ref: ref
+                            }
+                        }}
                         renderOption={(props, option) => {
                             const style = {
                                 ...props.style,
@@ -160,7 +170,7 @@ export default function LinkShortenerInput() {
                 </FormControl>
             </Grid>
             <Grid>
-                {link && <ShortLinkManager link={link as ShortLink} setLink={setLink} />}
+                {link && <ShortLinkManager link={link as ShortLink} setLink={setLink} setInputValue={setInputValue} />}
             </Grid>
         </Grid>
     )

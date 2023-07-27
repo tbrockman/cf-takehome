@@ -18,13 +18,11 @@ export type ShortLinkData = {
     views: LinkStats
 }
 
-export type PartialShortLink = Omit<Omit<ShortLink, 'short'>, 'long'> & {
+export type ShortLinkDataWithoutViews = Omit<ShortLinkData, 'views'>
+
+export type PartialShortLink = Omit<ShortLink, 'short' | 'long' | 'views'> & {
     short?: URL | string | null
     long: URL | string
     text?: string
-}
-
-export type CreatedLinkURNs = {
-    short: ShortUrlUrn,
-    long: LongUrlUrn
+    views?: LinkStats
 }
