@@ -140,6 +140,10 @@ Some common internal services (like go/links) allow you to specify your own cust
 ### Incredibly complex systems diagram
 Next.js (React + Node.js) -> Redis
 
+**Alternative consideration:**
+
+If there weren't a requirement that it had to be runnable locally, I would've been cheeky and written one function in a Cloudflare worker and used KV as the storage backend, and then leveraged Cloudflare's endpoint analytics instead of writing anything myself. (Part of me still thinks this would've been worth it )
+
 ### Why & how
 
 Redis solves for:
@@ -151,11 +155,14 @@ Redis solves for:
 Here's how we do the rest of what was asked for:
 - [x] Has one long URL ➡️ Store a key-value pair of short URL -> long.
 - [x] No duplicate URLs are allowed to be created ➡️ Store a key-value pair of long URL -> short.
-- [x] Generating a short url from a long url ➡️ We atomically increment a counter and [base58 encode it](https://learnmeabitcoin.com/technical/base58#why-base58) as the short URL. An alternative would be to store a hash of the long URL and only store a prefix. We won't have collisions but our URLs are a bit more guessable and *technically* you can create an infinite redirect loop if you take advantage of that -- you could do the same with hashing but you're probably better off just mining Bitcoin.
+- [x] Generating a short url from a long url ➡️ We atomically increment and get a counter and [base58 encode it](https://learnmeabitcoin.com/technical/base58#why-base58) as the short URL. We then store this in Redis so we can redirect short URLs to their corresponding long ones. An alternative would be to store a hash of the long URL and then slice off a prefix of pre-defined length. Theoretically we don't have to deal with collisions and we get the advantage of having shorter URLs until we have to store more, but our URLs are a bit more guessable and *technically* you can create an infinite redirect loop if you take advantage of that -- you could do the same with hashing but you're probably better off just mining Bitcoin. With hashing you can also rely on your datastore (if it provides a primary key / unique constraint) to prevent you from inserting long URLs which already exist using only one table/index. You'd end up having to do some additional work if you wanted to support manually entered short links with hashing.
 
-Next.js (and Reach) were chosen primarily for productivity reasons.
+Next.js (and React) were chosen primarily for productivity reasons:
+- Good amount of documentation and examples online for how to do pretty much anything
+- Used to working with Typescript/Javascript on my own projects
+- Opinionated frameworks that I'm okay letting make some decisions for me to do less work
 
-Given more time, I would probably re-write the backend in Rust.
+Given more time, I would probably re-write the backend in Rust 😬
 
 ## What's missing for production
 
@@ -168,8 +175,8 @@ Given more time, I would probably re-write the backend in Rust.
     * While unlikely, these operations should be executed atomically (all or nothing).
     * Technically it's possible for people competing to store the same link at the exact same time to store it twice because we do a GET *and then* SET
   * **Pipelining**: (sending multiple commands without waiting serially for their results) would improve performance (but isn't enabled).
-  * RedisStack currently enables all additional modules (even though we only use RedisSearch), needs to be configured to remove what isn't needed.
-  * We use Redis Timeseries for storing link analytics, but without any compaction enabled (which would improve performance and reduce storage footprint)
+  * [RedisStack](https://redis.io/docs/about/about-stack/) currently enables all additional modules (even though we only use RedisSearch), needs to be configured to remove what isn't needed.
+  * We use [Redis Timeseries](https://redis.io/docs/data-types/timeseries/) for storing link analytics, but without any compaction enabled (which would improve performance and reduce storage footprint if it were intelligently configured).
 * **Deployment:**
   * Because we leverage Redis, our API routes are *not* compatible with Edge runtimes (although Cloudflare Workers support TCP connections -- `ioredis` still assumes a Node.js environment) -- meaning deploying our application would require running a Node.js server somewhere.
   * The current docker compose file (provided for simplicity of execution) likely isn't what we would want to deploy to production. We would probably want to create Kubernetes manifests with necessary service and deployment specs (containing some concrete resource budgets) and horizontal pod autoscaling.
@@ -178,7 +185,7 @@ Given more time, I would probably re-write the backend in Rust.
   * **Progress indicators/Animations:** Not a lot of feedback is given to the user on why the UI is stalling before loading something
   * **Mobile:** I haven't even *looked* at what the UI looks like in mobile.
 * **Tech-debt:** 
-  * Code started getting worse and worse, some files are tough to read. Need betters tests as well.
+  * Code started getting worse as time went on, some files are a bit tougher to read. Need betters tests as well.
   * Front-end code isn't optimal
 
 ## Troubleshooting
