@@ -35,7 +35,7 @@ yarn dev
 
 ### Documentation
 
-After starting the application, you can find the OpenAPI documentation by navigating to [localhost:3000/docs](http://localhost:3000/docs) and JSON spec at [localhost:3000/api/doc](http://localhost:3000/api/doc).
+After starting the application, you can find the Swagger UI by navigating to [localhost:3000/docs](http://localhost:3000/docs) and OpenAPI JSON spec at [localhost:3000/api/doc](http://localhost:3000/api/doc).
 
 There's also a Makefile where you can see some of the orchestration that was supposed to be available (some littered in `package.json` as well), but I ran out of time before digging into observability.
 
