@@ -35,7 +35,7 @@ yarn dev
 
 ### Documentation
 
-After starting the application, you can find the OpenAPI documentation by navigating to [localhost:3000/docs](http://localhost:3000/docs) and JSON spec at [localhost:3000/api/doc](http://localhost:3000/api/doc).
+After starting the application, you can find the Swagger UI by navigating to [localhost:3000/docs](http://localhost:3000/docs) and OpenAPI JSON spec at [localhost:3000/api/doc](http://localhost:3000/api/doc).
 
 There's also a Makefile where you can see some of the orchestration that was supposed to be available (some littered in `package.json` as well), but I ran out of time before digging into observability.
 
@@ -142,7 +142,7 @@ Next.js (React + Node.js) -> Redis
 
 **Alternative consideration:**
 
-If there weren't a requirement that it had to be runnable locally, I would've been cheeky and written everything in a Cloudflare worker and used KV as the storage backend, and then leveraged Cloudflare's endpoint analytics (which isn't available locally) instead of writing anything myself (part of me still thinks this would've been worth it just for the memes).
+If there weren't a requirement that it had to be runnable locally, I would've been cheeky and written everything in a Cloudflare worker and used KV as the storage backend, and then leveraged Cloudflare's endpoint analytics (which isn't available locally) instead of writing anything myself (part of me still thinks this would've been worth it).
 
 ### Why & how
 
