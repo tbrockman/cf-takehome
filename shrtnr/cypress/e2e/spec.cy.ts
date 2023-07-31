@@ -4,22 +4,22 @@ describe('shrtnr', () => {
 
   context('home', () => {
     it('loads the home page', () => {
-      cy.visit('localhost:3000/')
+      cy.visit('/')
     })
   })
 
   context('create/delete', () => {
 
     before(() => {
-      cy.request('POST', 'localhost:3000/api/admin/clean').its('status').should('equal', 200)
+      cy.request('POST', `/api/admin/clean`).its('status').should('equal', 200)
     })
 
     after(() => {
-      cy.request('POST', 'localhost:3000/api/admin/clean').its('status').should('equal', 200)
+      cy.request('POST', `/api/admin/clean`).its('status').should('equal', 200)
     })
 
     it('creates a short link', () => {
-      cy.visit('localhost:3000/')
+      cy.visit('/')
       const form = cy.get('#find-or-shorten-form')
       form.click()
       cy.intercept('POST', '/api/links').as('createLink')
@@ -31,14 +31,14 @@ describe('shrtnr', () => {
     })
 
     it('returns existing short link on exact search', () => {
-      cy.request('POST', 'localhost:3000/api/links', { url: 'https://anewlink.com' }).then((response) => {
+      cy.request('POST', `/api/links`, { url: 'https://anewlink.com' }).then((response) => {
         expect(response.status).to.equal(201)
         expect(response.body).to.haveOwnProperty('short')
         expect(response.body).to.haveOwnProperty('long')
         expect(response.body).to.haveOwnProperty('views')
         expect(response.body.long).to.equal('https://anewlink.com')
       }).then(() => {
-        cy.visit('localhost:3000/')
+        cy.visit('/')
         const form = cy.get('#find-or-shorten-form')
         form.click()
         cy.intercept('POST', '/api/links').as('createLink')
@@ -48,14 +48,14 @@ describe('shrtnr', () => {
     })
 
     it('deletes an existing short link', () => {
-      cy.request('POST', 'localhost:3000/api/links', { url: 'https://anewlink-2.com' }).then((res) => {
+      cy.request('POST', `/api/links`, { url: 'https://anewlink-2.com' }).then((res) => {
         const loc = res.headers.location
-        cy.visit('localhost:3000/')
+        const url = new URL(loc as string)
+        cy.visit('/')
         const form = cy.get('#find-or-shorten-form')
         form.click()
-        cy.intercept('POST', '/api/links').as('createLink')
         form.type('https://anewlink-2.com{enter}')
-        cy.intercept('DELETE', loc).as('deleteLink')
+        cy.intercept('DELETE', url.pathname).as('deleteLink')
         const deleteButton = cy.get(':nth-child(2) > .MuiButton-root')
         deleteButton.click()
         cy.get('.MuiBox-root > .MuiButton-variantSolid').click()
@@ -68,19 +68,19 @@ describe('shrtnr', () => {
 
   context('search', () => {
     before(() => {
-      cy.request('POST', 'localhost:3000/api/admin/clean')
+      cy.request('POST', `/api/admin/clean`)
       const { urls } = require('../fixtures/data.json')
       return urls.forEach((url) => {
-        cy.request({ method: 'POST', url: 'localhost:3000/api/links', body: { url } }).its('status').should('equal', 201)
+        cy.request({ method: 'POST', url: `/api/links`, body: { url } }).its('status').should('equal', 201)
       })
     })
 
     after(() => {
-      cy.request('POST', 'localhost:3000/api/admin/clean')
+      cy.request('POST', `/api/admin/clean`)
     })
 
     it('returns list of clickable search results', () => {
-      cy.visit('localhost:3000/')
+      cy.visit('/')
       const label = cy.contains('🔍 Find or 🩳 shorten a 🔗 link')
       label.click()
       const form = cy.get('#find-or-shorten-form')
@@ -98,7 +98,7 @@ describe('shrtnr', () => {
     it('finds results filtered by protocol', () => { })
 
     it('finds no search results except to create new link', () => {
-      cy.visit('localhost:3000/')
+      cy.visit('/')
       const label = cy.contains('🔍 Find or 🩳 shorten a 🔗 link')
       label.click()
       const form = cy.get('#find-or-shorten-form')

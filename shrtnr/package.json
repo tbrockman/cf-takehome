@@ -15,7 +15,6 @@
     "redis": "docker compose up",
     "redis:up": "docker compose up -d || true",
     "redis:down": "docker compose down || true",
-    "attach": "docker compose up",
     "cypress": "cypress open --e2e",
     "cypress:headless": "cypress run --browser=chrome --headless",
     "e2e:headless": "yarn redis:up && start-server-and-test dev http://0.0.0.0:3000 \"yarn cypress:headless\"",

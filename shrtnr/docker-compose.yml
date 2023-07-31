@@ -43,8 +43,11 @@ services:
     profiles:
       - e2e
     depends_on:
-      - redis-init
-    image: cypress/included:3.2.0
+      - nextjs
+    image: cypress/included:latest
     volumes:
       - ./:/e2e
     working_dir: /e2e
+    command: npx cypress run
+    environment:
+      - CYPRESS_BASE_URL=http://nextjs:3000
